@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Cloud, Download, LogOut, Moon, RefreshCw, Sun, Upload, Monitor, Trash2 } from "lucide-react";
-import { db } from "@/lib/db/db";
+import { db, isDemoMode } from "@/lib/db/db";
+import { startDemo, stopDemo } from "@/lib/demo";
 import { exportCSV, exportJSON, importJSON, updateSettings, wipeLocalData } from "@/lib/db/repo";
 import { useSettings } from "@/lib/hooks";
 import { useStatus } from "@/lib/db/status";
@@ -114,6 +115,11 @@ export default function SettingsPage() {
             <Button onClick={async () => download(`forge-backup-${today}.json`, await exportJSON(), "application/json")}><Download className="size-4" /> Export JSON (back-up)</Button>
             <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="size-4" /> Back-up importeren</Button>
             <Button variant="danger" onClick={() => setWipe(true)}><Trash2 className="size-4" /> Lokale gegevens wissen</Button>
+            {isDemoMode() ? (
+              <Button variant="secondary" className="sm:col-span-2" onClick={() => void stopDemo()}>Voorbeeldmodus stoppen</Button>
+            ) : (
+              <Button variant="secondary" className="sm:col-span-2" onClick={() => startDemo().catch((e) => toast(errorMessage(e), "error"))}>Bekijk de app met voorbeelddata</Button>
+            )}
           </div>
           <input
             ref={fileRef}

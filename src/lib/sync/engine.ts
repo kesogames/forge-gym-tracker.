@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient, type Session } from "@supabase/supabase-js";
-import { db, SYNCED_TABLES, type SyncedTable } from "@/lib/db/db";
+import { db, isDemoMode, SYNCED_TABLES, type SyncedTable } from "@/lib/db/db";
 import { onLocalWrite, setSync } from "@/lib/db/status";
 
 // Local-first sync met Supabase.
@@ -189,6 +189,7 @@ let started = false;
 export function startAutoSync() {
   if (started || typeof window === "undefined") return;
   started = true;
+  if (isDemoMode()) return setSync("disabled"); // voorbeelddata nooit synchroniseren
   const sb = supabase();
   if (!sb) {
     setSync("disabled");

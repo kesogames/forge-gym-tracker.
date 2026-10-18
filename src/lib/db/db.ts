@@ -85,9 +85,19 @@ export class GymDB extends Dexie {
   }
 }
 
+/** Voorbeeldmodus gebruikt een aparte database, zodat echte gegevens nooit geraakt worden. */
+export const DEMO_DB_NAME = "gymtracker-demo";
+export function isDemoMode(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem("forge-demo") === "1";
+  } catch {
+    return false;
+  }
+}
+
 let _db: GymDB | null = null;
 export function db(): GymDB {
-  if (!_db) _db = new GymDB();
+  if (!_db) _db = new GymDB(isDemoMode() ? DEMO_DB_NAME : "gymtracker");
   return _db;
 }
 

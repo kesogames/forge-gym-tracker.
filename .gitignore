@@ -43,7 +43,6 @@ next-env.d.ts
 # tests
 /test-results
 /playwright-report
-demo-backup.json
 
 /out
 /artifact

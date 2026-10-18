@@ -79,6 +79,8 @@ export const settingsPatchSchema = z
     rest_sound: z.boolean(),
     favorite_exercises: z.array(z.string()),
     onboarded: z.boolean(),
+    dashboard_order: z.array(z.string().max(40)).max(60),
+    dashboard_hidden: z.array(z.string().max(40)).max(60),
   })
   .partial();
 

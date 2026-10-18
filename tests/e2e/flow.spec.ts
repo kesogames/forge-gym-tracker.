@@ -152,3 +152,24 @@ test("actieve training overleeft het sluiten van de app", async ({ page, context
   await expect(p2).toHaveURL(/\/training$/);
   await expect(p2.getByTestId("exercise-card")).toContainText("Plank");
 });
+
+test("voorbeeldmodus en dashboard aanpassen", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("start-demo").click();
+  await expect(page.getByTestId("demo-banner")).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('[data-widget="calendar"]')).toBeVisible();
+  // blok verbergen en volgorde wijzigen
+  await page.getByTestId("customize-dashboard").click();
+  await page.getByTestId("widget-row-calendar").getByRole("switch").click();
+  await page.getByRole("button", { name: "Recente trainingen omhoog" }).click();
+  await page.getByRole("button", { name: "Klaar" }).click();
+  await expect(page.locator('[data-widget="calendar"]')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('[data-widget="calendar"]')).toHaveCount(0);
+  const order = await page.locator("[data-widget]").evaluateAll((els) => els.map((e) => e.getAttribute("data-widget")));
+  expect(order.indexOf("recent")).toBeLessThan(order.indexOf("challenges"));
+  // stoppen: terug naar eigen (lege) gegevens
+  await page.getByRole("button", { name: "Stoppen" }).click();
+  await expect(page.getByTestId("demo-banner")).toHaveCount(0);
+  await expect(page.getByText("Welkom bij Forge")).toBeVisible();
+});

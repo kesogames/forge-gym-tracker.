@@ -242,5 +242,9 @@ export interface UserSettings {
   rest_sound: boolean;
   favorite_exercises: string[];
   onboarded: boolean;
+  /** Volgorde van dashboardblokken (widget-id's) */
+  dashboard_order: string[];
+  /** Verborgen dashboardblokken */
+  dashboard_hidden: string[];
   updated_at: string;
 }

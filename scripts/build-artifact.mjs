@@ -11,6 +11,8 @@ await rm(dest, { recursive: true, force: true });
 await mkdir(dest, { recursive: true });
 // "_" vooraan is gereserveerd door de artifact-host: _next wordt next
 await cp(path.join(out, "_next"), path.join(dest, "next"), { recursive: true });
+await cp(path.join(root, "public", "demo-backup.json"), path.join(dest, "demo-backup.json"));
+
 // Afbeeldingen bundelen in pakketten van ~2 MB (artifact: max. ~500 bestanden).
 // Handgeschreven oefeningen eerst, zodat het eerste pakket de meest gebruikte bevat.
 {

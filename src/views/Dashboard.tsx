@@ -1,14 +1,17 @@
 "use client";
 import { Link } from "@/lib/nav";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { DndContext, closestCenter, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowRight, Award, CalendarCheck, Clock, Dumbbell, Flame, Layers, Play, Target, Trophy, Zap } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Award, CalendarCheck, Clock, Dumbbell, Flame, GripVertical, Layers, LayoutGrid, Play, RotateCcw, Target, Trophy, Zap } from "lucide-react";
 import { db } from "@/lib/db/db";
-import { awardChallenge } from "@/lib/db/repo";
+import { awardChallenge, updateSettings } from "@/lib/db/repo";
 import { useActiveSession, useBundles, useLatestBodyweight, useNow, useSettings, useExerciseMap, type Bundle } from "@/lib/hooks";
 import { PeriodFilter, filterRange, usePersistentFilter } from "@/components/PeriodFilter";
 import { ChartCard, HBarList, SimpleBarChart, SimpleLineChart } from "@/components/charts";
-import { Bar, Card, cx, Delta, EmptyState, Pill, ProgressRing, SectionTitle, Segmented } from "@/components/ui";
+import { Bar, Button, Card, cx, Delta, EmptyState, Pill, ProgressRing, SectionTitle, Segmented, Sheet } from "@/components/ui";
 import { applyFilters, exerciseHistory, periodStats, sessionTotals, weeklySeries } from "@/lib/stats";
 import { previousRange, startOfWeek, addDays, inRange, periodRange } from "@/lib/domain/periods";
 import { formatClock, formatDate, formatDuration, totalMs } from "@/lib/domain/time";
@@ -16,7 +19,107 @@ import { formatKg, formatNumber } from "@/lib/domain/volume";
 import { levelFromXp, monthlyChallenges, totalXp, weekStreaks, XP } from "@/lib/domain/gamification";
 import { MUSCLES, MUSCLE_NAME } from "@/lib/data/muscles";
 import { celebrate } from "@/components/Celebrate";
+import { startDemo } from "@/lib/demo";
+import { toast, errorMessage } from "@/components/toast";
 import { ActivityCalendar, Insights, LifetimeStrip, MuscleBalance, RecentRecords, TopLifts } from "@/components/DashboardExtras";
+
+// ───────────────────────── Dashboardblokken (volgorde en zichtbaarheid instelbaar)
+
+interface WidgetDef {
+  id: string;
+  label: string;
+  description: string;
+  size: "full" | "half";
+  /** Reageert op het periodefilter */
+  period?: boolean;
+}
+
+export const WIDGETS: WidgetDef[] = [
+  { id: "lifetime", label: "Totaal verplaatst", description: "Totaal tonnage, trainingen en uren", size: "full" },
+  { id: "calendar", label: "Trainingskalender", description: "6 maanden aan trainingsdagen", size: "half" },
+  { id: "insights", label: "Inzichten", description: "Automatische tips en trends", size: "half" },
+  { id: "toplifts", label: "Belangrijkste lifts", description: "Geschatte 1RM met trendlijn", size: "full" },
+  { id: "stats", label: "Statistieken", description: "Trainingen, sets, volume, tijd, records, level", size: "full", period: true },
+  { id: "balance", label: "Spierbalans", description: "Spinnenweb en duwen/trekken", size: "half", period: true },
+  { id: "records", label: "Recente records", description: "Je laatste persoonlijke records", size: "half" },
+  { id: "chart-volume", label: "Volume per week", description: "Staafgrafiek trainingsvolume", size: "half", period: true },
+  { id: "chart-strength", label: "Krachtprogressie", description: "1RM, gewicht of reps per oefening", size: "half", period: true },
+  { id: "chart-duration", label: "Trainingstijd per sessie", description: "Hoe lang je traint", size: "half", period: true },
+  { id: "chart-exvolume", label: "Volume per oefening", description: "Top 8 oefeningen", size: "half", period: true },
+  { id: "chart-frequency", label: "Frequentie per spiergroep", description: "Hoe vaak je elke spier traint", size: "full", period: true },
+  { id: "muscles", label: "Sets per spiergroep", description: "Werksets per spier, met telmethode", size: "full", period: true },
+  { id: "challenges", label: "Maanduitdagingen", description: "Doelen voor deze maand", size: "full" },
+  { id: "recent", label: "Recente trainingen", description: "Je laatste 6 trainingen", size: "full" },
+];
+const WIDGET_BY_ID = new Map(WIDGETS.map((w) => [w.id, w]));
+
+/** Volgorde uit instellingen + nieuwe blokken achteraan; verborgen blokken eruit. */
+export function resolveLayout(order: string[], hidden: string[]) {
+  const known = order.filter((id) => WIDGET_BY_ID.has(id));
+  const full = [...known, ...WIDGETS.map((w) => w.id).filter((id) => !known.includes(id))];
+  const hid = new Set(hidden.filter((id) => WIDGET_BY_ID.has(id)));
+  return { order: full, hidden: hid, visible: full.filter((id) => !hid.has(id)) };
+}
+
+function CustomizeSheet({ open, onOpenChange, order, hidden }: { open: boolean; onOpenChange: (o: boolean) => void; order: string[]; hidden: Set<string> }) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const save = (o: string[], h: Set<string>) => void updateSettings({ dashboard_order: o, dashboard_hidden: [...h] });
+  const move = (id: string, dir: -1 | 1) => {
+    const i = order.indexOf(id);
+    const j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    save(arrayMove(order, i, j), hidden);
+  };
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Dashboard aanpassen"
+      description="Kies wat je wilt zien en sleep of gebruik de pijltjes voor de volgorde."
+      footer={
+        <>
+          <Button block onClick={() => save([], new Set())}><RotateCcw className="size-4" /> Standaard</Button>
+          <Button block variant="primary" onClick={() => onOpenChange(false)}>Klaar</Button>
+        </>
+      }
+    >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e: DragEndEvent) => {
+        if (!e.over || e.active.id === e.over.id) return;
+        save(arrayMove(order, order.indexOf(String(e.active.id)), order.indexOf(String(e.over.id))), hidden);
+      }}>
+        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1.5">
+            {order.map((id, i) => (
+              <WidgetRow key={id} w={WIDGET_BY_ID.get(id)!} visible={!hidden.has(id)} first={i === 0} last={i === order.length - 1}
+                onToggle={() => { const h = new Set(hidden); if (h.has(id)) h.delete(id); else h.add(id); save(order, h); }}
+                onMove={(d) => move(id, d)} />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </Sheet>
+  );
+}
+
+function WidgetRow({ w, visible, first, last, onToggle, onMove }: { w: WidgetDef; visible: boolean; first: boolean; last: boolean; onToggle: () => void; onMove: (d: -1 | 1) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: w.id });
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={cx("flex items-center gap-2 rounded-2xl border border-line bg-surface p-2", isDragging && "relative z-10 shadow-2xl", !visible && "opacity-60")} data-testid={`widget-row-${w.id}`}>
+      <button {...attributes} {...listeners} aria-label={`${w.label} verslepen`} className="touch-none cursor-grab p-2 text-muted"><GripVertical className="size-5" /></button>
+      <div className="min-w-0 flex-1">
+        <div className="text-[15px] font-semibold truncate">{w.label}</div>
+        <div className="text-xs text-muted truncate">{w.description}</div>
+      </div>
+      <div className="flex flex-col">
+        <button aria-label={`${w.label} omhoog`} disabled={first} onClick={() => onMove(-1)} className="p-1 text-muted disabled:opacity-30"><ArrowUp className="size-4" /></button>
+        <button aria-label={`${w.label} omlaag`} disabled={last} onClick={() => onMove(1)} className="p-1 text-muted disabled:opacity-30"><ArrowDown className="size-4" /></button>
+      </div>
+      <button type="button" role="switch" aria-checked={visible} aria-label={`${w.label} tonen`} onClick={onToggle} className={cx("relative h-7 w-12 rounded-full transition shrink-0", visible ? "bg-accent" : "bg-surface-3")}>
+        <span className={cx("absolute top-1 size-5 rounded-full transition-all shadow", visible ? "left-6 bg-accent-ink" : "left-1 bg-white")} />
+      </button>
+    </div>
+  );
+}
 
 function greeting(h: number) {
   if (h < 6) return "Goedenacht";
@@ -37,6 +140,8 @@ export default function Dashboard() {
   const goalRows = useLiveQuery(() => db().muscle_group_goals.toArray(), [], []);
   const goals = useMemo(() => new Map(goalRows.map((g) => [g.muscle, g.sets_per_week])), [goalRows]);
   const exMap = useExerciseMap();
+  const [customize, setCustomize] = useState(false);
+  const layout = useMemo(() => resolveLayout(settings.dashboard_order, settings.dashboard_hidden), [settings.dashboard_order, settings.dashboard_hidden]);
   const now = new Date();
 
   const range = filterRange(f, now);
@@ -57,6 +162,14 @@ export default function Dashboard() {
     <div className="space-y-6">
       <Hero bundles={bundles} active={!!active} name={settings.display_name} goal={settings.weekly_workout_goal} />
 
+      {!isNew && (
+        <div className="flex justify-end -mb-3">
+          <button onClick={() => setCustomize(true)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink" data-testid="customize-dashboard">
+            <LayoutGrid className="size-4" /> Aanpassen
+          </button>
+        </div>
+      )}
+      <CustomizeSheet open={customize} onOpenChange={setCustomize} order={layout.order} hidden={layout.hidden} />
       {isNew ? (
         <Card>
           <EmptyState
@@ -70,47 +183,64 @@ export default function Dashboard() {
               </div>
             }
           />
+          <div className="border-t border-line px-6 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-muted">
+            Benieuwd hoe je dashboard eruitziet met data?
+            <button onClick={() => startDemo().catch((e) => toast(errorMessage(e), "error"))} className="font-semibold text-accent-text" data-testid="start-demo">Bekijk met voorbeelddata</button>
+          </div>
         </Card>
       ) : (
-        <>
-          <LifetimeStrip bundles={bundles} ctx={ctx} unit={settings.unit} />
-
-          <div className="grid lg:grid-cols-[1.6fr_1fr] gap-3">
-            <ActivityCalendar bundles={bundles} />
-            <Insights all={bundles} ctx={ctx} goals={goals} unit={settings.unit} />
+        <div className="dash-grid grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 items-start">
+          {layout.visible.map((id, i) => {
+            const w = WIDGET_BY_ID.get(id)!;
+            const firstPeriod = w.period && layout.visible.findIndex((x) => WIDGET_BY_ID.get(x)!.period) === i;
+            const nameOf = (eid: string) => exMap.get(eid)?.name ?? bundles.flatMap((b) => b.exercises).find((e) => e.exercise_id === eid)?.exercise_name ?? eid;
+            const node = (() => {
+              switch (id) {
+                case "lifetime": return <LifetimeStrip bundles={bundles} ctx={ctx} unit={settings.unit} />;
+                case "calendar": return <ActivityCalendar bundles={bundles} />;
+                case "insights": return <Insights all={bundles} ctx={ctx} goals={goals} unit={settings.unit} />;
+                case "toplifts": return <TopLifts bundles={bundles} exMap={exMap} unit={settings.unit} />;
+                case "stats": return (
+                  <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Stat icon={CalendarCheck} label="Trainingen" value={formatNumber(s.sessions)} delta={prev ? s.sessions - p.sessions : null} />
+                    <Stat icon={Layers} label="Werksets" value={formatNumber(s.working_sets)} delta={prev ? s.working_sets - p.working_sets : null} sub={`${formatNumber(s.reps)} herhalingen`} />
+                    <Stat icon={Flame} label="Trainingsvolume" value={formatKg(s.volume_kg, settings.unit)} delta={prev ? Math.round(s.volume_kg - p.volume_kg) : null} deltaUnit=" kg" testId="stat-volume" />
+                    <Stat icon={Clock} label="Trainingstijd" value={formatDuration(s.duration_sec)} delta={prev ? Math.round((s.duration_sec - p.duration_sec) / 60) : null} deltaUnit=" min" />
+                    <Stat icon={Trophy} label="Persoonlijke records" value={formatNumber(prsCur)} delta={prev ? prsCur - prsPrev : null} />
+                    <Stat icon={Target} label="Spiergroepen getraind" value={`${[...s.muscles.values()].filter((m) => m.primary > 0).length}`} sub={`van ${MUSCLES.length}`} />
+                    <Consistency bundles={bundles} goal={settings.weekly_workout_goal} />
+                    <XpCard bundles={bundles} prsCount={prs.length} achievementXp={achievements.reduce((a, x) => a + x.xp, 0)} goal={settings.weekly_workout_goal} />
+                  </section>
+                );
+                case "balance": return <MuscleBalance muscles={s.muscles} />;
+                case "records": return <RecentRecords prs={prs} exMap={exMap} unit={settings.unit} nameOf={nameOf} />;
+                case "chart-volume": return <Charts only="volume" bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />;
+                case "chart-strength": return <Charts only="strength" bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />;
+                case "chart-duration": return <Charts only="duration" bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />;
+                case "chart-exvolume": return <Charts only="exvolume" bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />;
+                case "chart-frequency": return <Charts only="frequency" bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />;
+                case "muscles": return <MuscleOverview stats={s} prevStats={prev ? p : null} />;
+                case "challenges": return <Challenges bundles={bundles} goal={settings.weekly_workout_goal} done={new Set(achievements.map((a) => a.id))} />;
+                case "recent": return <RecentWorkouts bundles={bundles} ctx={ctx} prs={prs} unit={settings.unit} />;
+                default: return null;
+              }
+            })();
+            return (
+              <Fragment key={id}>
+                {firstPeriod && (
+                  <div className="lg:col-span-2 pt-2" data-testid="period-section">
+                    <SectionTitle>Statistieken per periode</SectionTitle>
+                    <PeriodFilter f={f} setF={setF} />
+                  </div>
+                )}
+                <div className={cx("min-w-0", w.size === "full" && "lg:col-span-2")} data-widget={id}>{node}</div>
+              </Fragment>
+            );
+          })}
+          <div className="lg:col-span-2 flex justify-center pt-2">
+            <Button variant="ghost" onClick={() => setCustomize(true)}><LayoutGrid className="size-4" /> Dashboard aanpassen</Button>
           </div>
-
-          <TopLifts bundles={bundles} exMap={exMap} unit={settings.unit} />
-
-          <div className="pt-2">
-            <SectionTitle>Statistieken per periode</SectionTitle>
-            <PeriodFilter f={f} setF={setF} />
-          </div>
-
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Stat icon={CalendarCheck} label="Trainingen" value={formatNumber(s.sessions)} delta={prev ? s.sessions - p.sessions : null} />
-            <Stat icon={Layers} label="Werksets" value={formatNumber(s.working_sets)} delta={prev ? s.working_sets - p.working_sets : null} sub={`${formatNumber(s.reps)} herhalingen`} />
-            <Stat icon={Flame} label="Trainingsvolume" value={formatKg(s.volume_kg, settings.unit)} delta={prev ? Math.round(s.volume_kg - p.volume_kg) : null} deltaUnit=" kg" testId="stat-volume" />
-            <Stat icon={Clock} label="Trainingstijd" value={formatDuration(s.duration_sec)} delta={prev ? Math.round((s.duration_sec - p.duration_sec) / 60) : null} deltaUnit=" min" />
-            <Stat icon={Trophy} label="Persoonlijke records" value={formatNumber(prsCur)} delta={prev ? prsCur - prsPrev : null} />
-            <Stat icon={Target} label="Spiergroepen getraind" value={`${[...s.muscles.values()].filter((m) => m.primary > 0).length}`} sub={`van ${MUSCLES.length}`} />
-            <Consistency bundles={bundles} goal={settings.weekly_workout_goal} />
-            <XpCard bundles={bundles} prsCount={prs.length} achievementXp={achievements.reduce((a, x) => a + x.xp, 0)} goal={settings.weekly_workout_goal} />
-          </section>
-
-          <div className="grid lg:grid-cols-2 gap-3">
-            <MuscleBalance muscles={s.muscles} />
-            <RecentRecords prs={prs} exMap={exMap} unit={settings.unit} nameOf={(id) => exMap.get(id)?.name ?? bundles.flatMap((b) => b.exercises).find((e) => e.exercise_id === id)?.exercise_name ?? id} />
-          </div>
-
-          <Charts bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />
-
-          <MuscleOverview stats={s} prevStats={prev ? p : null} />
-
-          <Challenges bundles={bundles} goal={settings.weekly_workout_goal} done={new Set(achievements.map((a) => a.id))} />
-
-          <RecentWorkouts bundles={bundles} ctx={ctx} prs={prs} unit={settings.unit} />
-        </>
+        </div>
       )}
     </div>
   );
@@ -237,7 +367,9 @@ function XpCard({ bundles, prsCount, achievementXp, goal }: { bundles: Bundle[];
   );
 }
 
-function Charts({ bundles, cur, range, ctx, period, exerciseFilter }: { bundles: Bundle[]; cur: Bundle[]; range: { start: Date; end: Date }; ctx: { bodyweight_kg: number | null; include_bodyweight: boolean }; period: string; exerciseFilter: string | null }) {
+type ChartId = "volume" | "strength" | "duration" | "exvolume" | "frequency";
+
+function Charts({ bundles, cur, range, ctx, period, exerciseFilter, only }: { bundles: Bundle[]; cur: Bundle[]; range: { start: Date; end: Date }; ctx: { bodyweight_kg: number | null; include_bodyweight: boolean }; period: string; exerciseFilter: string | null; only: ChartId }) {
   const settings = useSettings();
   const map = useExerciseMap();
   const first = cur.length ? cur.reduce((a, b) => (a.session.started_at < b.session.started_at ? a : b)).session.started_at : null;
@@ -273,17 +405,17 @@ function Charts({ bundles, cur, range, ctx, period, exerciseFilter }: { bundles:
   void period;
 
   return (
-    <section className="grid lg:grid-cols-2 gap-3">
-      <ChartCard
+    <>
+      {only === "volume" && <ChartCard
         title="Trainingsvolume per week"
         subtitle={`${formatKg(weekly.reduce((a, w) => a + w.volume, 0), settings.unit)} in ${weekly.length} weken`}
         table={{ head: ["Week van", "Volume (kg)", "Sets", "Trainingen"], rows: weekly.map((w) => [w.label, w.volume, w.sets, w.sessions]) }}
         empty={!cur.length}
       >
         <SimpleBarChart data={weekly} x="label" y="volume" unit="kg" highlightLast labelFmt={(l) => `Week van ${l}`} />
-      </ChartCard>
+      </ChartCard>}
 
-      <ChartCard
+      {only === "strength" && <ChartCard
         title="Krachtprogressie"
         subtitle={chosen ? map.get(chosen)?.name ?? hist[0]?.best_set : "Kies een oefening"}
         action={
@@ -299,23 +431,23 @@ function Charts({ bundles, cur, range, ctx, period, exerciseFilter }: { bundles:
         <Segmented value={metric} onChange={setMetric} className="mb-2 text-xs" options={[{ value: "e1rm", label: "Gesch. 1RM" }, { value: "weight", label: "Gewicht" }, { value: "reps", label: "Herhalingen" }]} />
         <SimpleLineChart data={series} x="label" y={metricKey} unit={metricKey === "reps" ? "reps" : "kg"} height={170} labelFmt={(l, p) => `${l} · beste set ${p.best}`} />
         {metricKey === "e1rm" && <p className="text-[11px] text-muted mt-1">Geschatte 1RM met de Epley-formule (sets tot 12 herhalingen). Dit is een schatting.</p>}
-      </ChartCard>
+      </ChartCard>}
 
-      <ChartCard title="Trainingstijd per sessie" subtitle={durations.length ? `gemiddeld ${Math.round(durations.reduce((a, d) => a + d.minuten, 0) / durations.length)} min` : undefined} table={{ head: ["Datum", "Training", "Minuten"], rows: durations.map((d) => [d.label, d.name, d.minuten]) }} empty={!durations.length}>
+      {only === "duration" && <ChartCard title="Trainingstijd per sessie" subtitle={durations.length ? `gemiddeld ${Math.round(durations.reduce((a, d) => a + d.minuten, 0) / durations.length)} min` : undefined} table={{ head: ["Datum", "Training", "Minuten"], rows: durations.map((d) => [d.label, d.name, d.minuten]) }} empty={!durations.length}>
         <SimpleBarChart data={durations.slice(-24)} x="label" y="minuten" unit="min" labelFmt={(l, p) => `${l} · ${p.name}`} />
-      </ChartCard>
+      </ChartCard>}
 
-      <ChartCard title="Volume per oefening" subtitle="Top 8 in deze periode" table={{ head: ["Oefening", "Volume (kg)", "Sets"], rows: topEx.map(([, v]) => [v.name, Math.round(v.volume), v.sets]) }} empty={!topEx.length}>
+      {only === "exvolume" && <ChartCard title="Volume per oefening" subtitle="Top 8 in deze periode" table={{ head: ["Oefening", "Volume (kg)", "Sets"], rows: topEx.map(([, v]) => [v.name, Math.round(v.volume), v.sets]) }} empty={!topEx.length}>
         <HBarList rows={topEx.slice(0, 8).map(([, v]) => ({ label: v.name, value: Math.round(v.volume), sub: `${v.sets} sets` }))} unit="kg" />
-      </ChartCard>
+      </ChartCard>}
 
-      <ChartCard title="Trainingsfrequentie per spiergroep" subtitle="Aantal trainingen met minstens één werkset (primair)" table={{ head: ["Spiergroep", "Trainingen"], rows: freq.map((r) => [r.label, r.value]) }} empty={!freq.length} className="lg:col-span-2">
+      {only === "frequency" && <ChartCard title="Trainingsfrequentie per spiergroep" subtitle="Aantal trainingen met minstens één werkset (primair)" table={{ head: ["Spiergroep", "Trainingen"], rows: freq.map((r) => [r.label, r.value]) }} empty={!freq.length}>
         <div className="grid sm:grid-cols-2 gap-x-8">
           <HBarList rows={freq.slice(0, Math.ceil(freq.length / 2))} max={Math.max(1, ...freq.map((r) => r.value))} />
           <HBarList rows={freq.slice(Math.ceil(freq.length / 2))} max={Math.max(1, ...freq.map((r) => r.value))} />
         </div>
-      </ChartCard>
-    </section>
+      </ChartCard>}
+    </>
   );
 }
 

@@ -9,6 +9,8 @@ import { SaveIndicator } from "./SaveIndicator";
 import { useActiveSession, useMounted, useNow, useSettings } from "@/lib/hooks";
 import { formatClock, isPaused, totalMs } from "@/lib/domain/time";
 import { startAutoSync } from "@/lib/sync/engine";
+import { isDemoMode } from "@/lib/db/db";
+import { stopDemo } from "@/lib/demo";
 
 export const NAV = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -42,6 +44,7 @@ function Shell({ children }: { children: ReactNode }) {
   const settings = useSettings();
   const active = useActiveSession();
   const [more, setMore] = useState(false);
+  const demo = isDemoMode();
 
   // Thema toepassen
   useEffect(() => {
@@ -114,6 +117,14 @@ function Shell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex-1 min-w-0">
+        {demo && (
+          <div className="sticky top-0 z-40 bg-info text-white pt-safe" data-testid="demo-banner">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-2 flex items-center gap-3 text-sm">
+              <span className="font-semibold flex-1">Voorbeeldmodus · dit zijn voorbeeldgegevens, je eigen trainingen zijn veilig</span>
+              <button onClick={() => void stopDemo()} className="h-8 px-3 rounded-full bg-white/20 font-semibold whitespace-nowrap">Stoppen</button>
+            </div>
+          </div>
+        )}
         <main className={cx("mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+12px)] lg:pt-8", active && !onTraining ? "pb-44" : "pb-28", "lg:pb-12")}>
           {children}
         </main>

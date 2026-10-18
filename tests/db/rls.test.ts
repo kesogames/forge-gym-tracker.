@@ -31,7 +31,7 @@ describe.skipIf(!url)("Supabase schema + RLS", () => {
     await c.connect();
     await c.query("drop schema if exists public cascade; create schema public; grant usage on schema public to public;");
     await c.query(readFileSync(path.join(root, "tests/db/supabase-stub.sql"), "utf8"));
-    await c.query(readFileSync(path.join(root, "supabase/migrations/20261018000000_init.sql"), "utf8"));
+    for (const m of ["20261018000000_init.sql", "20261019000000_dashboard_layout.sql"]) await c.query(readFileSync(path.join(root, "supabase/migrations", m), "utf8"));
     await c.query(readFileSync(path.join(root, "supabase/seed.sql"), "utf8"));
     await c.query("insert into auth.users (id) values ($1), ($2) on conflict do nothing", [A, B]);
   });

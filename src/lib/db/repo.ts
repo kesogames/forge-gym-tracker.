@@ -107,6 +107,8 @@ export const DEFAULT_SETTINGS: Omit<UserSettings, "updated_at"> = {
   rest_sound: true,
   favorite_exercises: [],
   onboarded: false,
+  dashboard_order: [],
+  dashboard_hidden: [],
 };
 
 export async function getSettings(): Promise<UserSettings> {
