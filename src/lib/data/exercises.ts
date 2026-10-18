@@ -275,5 +275,7 @@ export const EXERCISE_BY_ID: Map<string, Exercise> = new Map(EXERCISES.map((x) =
 export function imageUrl(image: string | null, frame: 0 | 1 = 0): string | null {
   if (!image) return null;
   if (image.startsWith("http") || image.startsWith("data:")) return image;
-  return `/exercises/${image}/${frame}.webp`;
+  // In de single-page build (artifact) relatief, zodat het pad onder elke basis-URL werkt
+  const base = process.env.NEXT_PUBLIC_SPA === "1" ? "exercises" : "/exercises";
+  return `${base}/${image}/${frame}.webp`;
 }

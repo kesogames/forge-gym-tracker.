@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { Link } from "@/lib/nav";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { ChevronRight, ClipboardList, Play, Plus, Repeat, Star } from "lucide-react";

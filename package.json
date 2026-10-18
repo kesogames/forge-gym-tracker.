@@ -15,7 +15,8 @@
     "seed:sql": "tsx scripts/generate-seed.ts",
     "images": "node scripts/fetch-exercise-images.mjs",
     "icons": "node scripts/make-icons.mjs",
-    "demo": "tsx scripts/demo-backup.ts > demo-backup.json"
+    "demo": "tsx scripts/demo-backup.ts > demo-backup.json",
+    "build:artifact": "NEXT_PUBLIC_SPA=1 next build && node scripts/build-artifact.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

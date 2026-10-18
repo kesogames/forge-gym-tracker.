@@ -44,3 +44,7 @@ next-env.d.ts
 /test-results
 /playwright-report
 demo-backup.json
+
+/out
+/artifact
+/.next-spa

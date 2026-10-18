@@ -1,6 +1,6 @@
 "use client";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link } from "@/lib/nav";
+import { usePathname, useRouter } from "@/lib/nav";
 import { useEffect, useState, type ReactNode } from "react";
 import { ClipboardList, Dumbbell, History, Home, Library, MoreHorizontal, Play, Settings, TrendingUp, Pause } from "lucide-react";
 import { cx, Sheet } from "./ui";
@@ -61,7 +61,7 @@ function Shell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     startAutoSync();
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SPA !== "1") {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);

@@ -1,12 +1,12 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/nav";
 import { useState } from "react";
 import { Flag, NotebookPen, Pause, Play, Plus, Trash2, XCircle } from "lucide-react";
 import { abortSession, addExerciseToSession, deleteSession, finishSession, pauseSession, resumeSession, updateSessionMeta } from "@/lib/db/repo";
 import { activeMs, formatClock, formatTimeOfDay, isPaused, pausedMs, restMs, totalMs } from "@/lib/domain/time";
 import { useNow, useSessionDetail } from "@/lib/hooks";
 import type { WorkoutSession } from "@/lib/types";
-import { Button, cx, EmptyState, Field, inputCls, Sheet } from "../ui";
+import { Button, Confirm, cx, EmptyState, Field, inputCls, Sheet } from "../ui";
 import { SaveIndicator } from "../SaveIndicator";
 import { ExercisePicker } from "../ExercisePicker";
 import { ExerciseCard } from "./ExerciseCard";
@@ -22,6 +22,7 @@ export function ActiveWorkout({ session }: { session: WorkoutSession }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(session.notes);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const paused = isPaused(session);
 
   const allSets = detail ? [...detail.setsByExercise.values()].flat() : [];
@@ -121,6 +122,8 @@ export function ActiveWorkout({ session }: { session: WorkoutSession }) {
         </Field>
       </Sheet>
 
+      <Confirm open={confirmDelete} onOpenChange={setConfirmDelete} title="Training verwijderen?" body="De training en alle sets worden definitief verwijderd. Dit kan niet ongedaan worden." confirmLabel="Verwijderen" danger onConfirm={async () => { await deleteSession(session.id); router.replace("/"); }} />
+
       <Sheet open={finishOpen} onOpenChange={setFinishOpen} title="Training afronden?" description={`${formatClock(totalMs(session, now))} totale trainingstijd`}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
@@ -146,7 +149,7 @@ export function ActiveWorkout({ session }: { session: WorkoutSession }) {
             <Button variant="secondary" onClick={async () => { await abortSession(session.id); toast("Training afgebroken en bewaard", "success"); router.replace("/"); }}>
               <XCircle className="size-4" /> Afbreken
             </Button>
-            <Button variant="danger" onClick={async () => { if (confirm("Training volledig verwijderen? Dit kan niet ongedaan worden.")) { await deleteSession(session.id); router.replace("/"); } }}>
+            <Button variant="danger" onClick={() => { setFinishOpen(false); setConfirmDelete(true); }}>
               <Trash2 className="size-4" /> Verwijderen
             </Button>
           </div>
