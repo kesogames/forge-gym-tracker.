@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Plus, Search, Star, X } from "lucide-react";
 import { Button, Chip, cx, inputCls, Sheet } from "./ui";
 import { ExerciseImage } from "./ExerciseImage";
@@ -7,6 +7,7 @@ import { CustomExerciseForm } from "./CustomExerciseForm";
 import { useAllExercises, useSettings } from "@/lib/hooks";
 import { EQUIPMENT_NAME, METRIC_TYPE_NAME, MUSCLES, MUSCLE_NAME } from "@/lib/data/muscles";
 import type { Equipment, Exercise, MetricType, MuscleId } from "@/lib/types";
+import { exerciseGroup, GROUP_NAME, type ExerciseGroup } from "@/lib/data/exercises";
 
 export interface ExerciseFilterState {
   q: string;
@@ -14,9 +15,10 @@ export interface ExerciseFilterState {
   equipment: Equipment | null;
   type: MetricType | null;
   favorites: boolean;
+  group: ExerciseGroup | null;
 }
 
-export const emptyFilter: ExerciseFilterState = { q: "", muscle: null, equipment: null, type: null, favorites: false };
+export const emptyFilter: ExerciseFilterState = { q: "", muscle: null, equipment: null, type: null, favorites: false, group: null };
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
@@ -27,6 +29,7 @@ export function filterExercises(all: Exercise[], f: ExerciseFilterState, favorit
     if (f.equipment && e.equipment !== f.equipment) return false;
     if (f.type && e.metric_type !== f.type) return false;
     if (f.favorites && !favorites.includes(e.id)) return false;
+    if (f.group && exerciseGroup(e) !== f.group) return false;
     if (terms.length) {
       const hay = norm(`${e.name} ${MUSCLE_NAME[e.primary_muscle]} ${EQUIPMENT_NAME[e.equipment]} ${e.id.replace(/-/g, " ")}`);
       return terms.every((t) => hay.includes(t));
@@ -36,6 +39,9 @@ export function filterExercises(all: Exercise[], f: ExerciseFilterState, favorit
     // primaire spier eerst bij spierfilter, favorieten bovenaan
     const fa = Number(favorites.includes(b.id)) - Number(favorites.includes(a.id));
     if (fa) return fa;
+    // handgeschreven (Nederlands) vóór de uitgebreide database
+    const src = Number(a.source === "db") - Number(b.source === "db");
+    if (src) return src;
     if (f.muscle) {
       const p = Number(b.primary_muscle === f.muscle) - Number(a.primary_muscle === f.muscle);
       if (p) return p;
@@ -76,15 +82,21 @@ export function ExerciseFilters({ f, setF, showFav = true }: { f: ExerciseFilter
           </Chip>
         ))}
       </div>
-      <div className="flex gap-2">
-        <select aria-label="Materiaal" value={f.equipment ?? ""} onChange={(e) => setF({ ...f, equipment: (e.target.value || null) as Equipment | null })} className={cx(inputCls, "h-10 text-sm flex-1 px-3")}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <select aria-label="Soort oefening" value={f.group ?? ""} onChange={(e) => setF({ ...f, group: (e.target.value || null) as ExerciseGroup | null })} className={cx(inputCls, "h-10 text-sm px-3 min-w-0 col-span-2 sm:col-span-1")}>
+          <option value="">Alle soorten</option>
+          {Object.entries(GROUP_NAME).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+        <select aria-label="Materiaal" value={f.equipment ?? ""} onChange={(e) => setF({ ...f, equipment: (e.target.value || null) as Equipment | null })} className={cx(inputCls, "h-10 text-sm px-3 min-w-0")}>
           <option value="">Alle materialen</option>
           {Object.entries(EQUIPMENT_NAME).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
         </select>
-        <select aria-label="Oefeningstype" value={f.type ?? ""} onChange={(e) => setF({ ...f, type: (e.target.value || null) as MetricType | null })} className={cx(inputCls, "h-10 text-sm flex-1 px-3")}>
-          <option value="">Alle typen</option>
+        <select aria-label="Oefeningstype" value={f.type ?? ""} onChange={(e) => setF({ ...f, type: (e.target.value || null) as MetricType | null })} className={cx(inputCls, "h-10 text-sm px-3 min-w-0")}>
+          <option value="">Alle meetwijzen</option>
           {Object.entries(METRIC_TYPE_NAME).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -110,6 +122,7 @@ export function ExerciseRow({ e, selected, onClick, right, favorite }: { e: Exer
         <div className="text-[13px] text-muted truncate">
           {MUSCLE_NAME[e.primary_muscle]} · {EQUIPMENT_NAME[e.equipment]}
           {e.is_custom && " · Eigen"}
+          {e.source === "db" && " · Database"}
         </div>
       </div>
       {right ?? (selected !== undefined && (
@@ -142,6 +155,8 @@ export function ExercisePicker({
   const [sel, setSel] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const list = useMemo(() => filterExercises(all, f, settings.favorite_exercises), [all, f, settings.favorite_exercises]);
+  const [limit, setLimit] = useState(50);
+  useEffect(() => setLimit(50), [f]);
 
   const close = (o: boolean) => {
     if (!o) {
@@ -176,7 +191,7 @@ export function ExercisePicker({
           </button>
         </div>
         <div className="space-y-0.5">
-          {list.map((e) => (
+          {list.slice(0, limit).map((e) => (
             <ExerciseRow
               key={e.id}
               e={e}
@@ -190,6 +205,11 @@ export function ExercisePicker({
               }}
             />
           ))}
+          {list.length > limit && (
+            <button onClick={() => setLimit((l) => l + 80)} className="w-full h-12 rounded-2xl bg-surface-2 text-sm font-semibold mt-2">
+              Meer tonen ({list.length - limit} over)
+            </button>
+          )}
           {!list.length && <p className="text-center text-muted py-10">Geen oefeningen gevonden. Pas je filters aan of maak een eigen oefening.</p>}
         </div>
       </Sheet>

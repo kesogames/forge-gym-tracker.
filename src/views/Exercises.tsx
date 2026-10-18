@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/lib/nav";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Plus, Star, Timer, Trash2, TrendingUp } from "lucide-react";
@@ -7,6 +7,7 @@ import { db } from "@/lib/db/db";
 import { alternativesFor, deleteCustomExercise, setExerciseNote, toggleFavoriteExercise } from "@/lib/db/repo";
 import { useAllExercises, useBundles, useLatestBodyweight, useSettings } from "@/lib/hooks";
 import { EQUIPMENT_NAME, METRIC_TYPE_NAME, MUSCLE_NAME } from "@/lib/data/muscles";
+import { exerciseGroup, GROUP_NAME } from "@/lib/data/exercises";
 import { exerciseHistory } from "@/lib/stats";
 import { formatDate } from "@/lib/domain/time";
 import { Button, Card, Confirm, cx, Field, inputCls, Pill, Sheet } from "@/components/ui";
@@ -23,12 +24,14 @@ export default function ExercisesPage() {
   const [sel, setSel] = useState<Exercise | null>(null);
   const [creating, setCreating] = useState(false);
   const list = useMemo(() => filterExercises(all, f, settings.favorite_exercises), [all, f, settings.favorite_exercises]);
+  const [limit, setLimit] = useState(60);
+  useEffect(() => setLimit(60), [f]);
   return (
     <div className="space-y-5">
       <header className="flex items-end justify-between gap-3 pt-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Oefeningen</h1>
-          <p className="text-muted mt-1">{all.length} oefeningen met uitvoering en alternatieven</p>
+          <p className="text-muted mt-1">{all.length} oefeningen: kracht, kettlebell, landmine, plyo, rotatie en meer</p>
         </div>
         <Button variant="primary" onClick={() => setCreating(true)}><Plus className="size-4" /> Eigen</Button>
       </header>
@@ -36,7 +39,7 @@ export default function ExercisesPage() {
         <ExerciseFilters f={f} setF={setF} />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {list.map((e) => (
+        {list.slice(0, limit).map((e) => (
           <button key={e.id} onClick={() => setSel(e)} className="group text-left rounded-3xl bg-surface border border-line overflow-hidden hover:border-line-strong transition active:scale-[0.99]" data-testid="exercise-tile">
             <div className="relative">
               <ExerciseImage image={e.image} name={e.name} muscle={e.primary_muscle} className="aspect-[4/3] w-full" animate />
@@ -49,6 +52,11 @@ export default function ExercisesPage() {
           </button>
         ))}
       </div>
+      {list.length > limit && (
+        <Button block size="lg" variant="secondary" onClick={() => setLimit((l) => l + 90)}>
+          Meer tonen ({list.length - limit} over)
+        </Button>
+      )}
       {!list.length && <p className="text-center text-muted py-12">Geen oefeningen gevonden.</p>}
       <p className="text-xs text-muted text-center">Afbeeldingen: free-exercise-db, Unlicense (publiek domein).</p>
       {sel && <ExerciseDetail e={all.find((x) => x.id === sel.id) ?? sel} onClose={() => setSel(null)} onPick={(x) => setSel(x)} />}
@@ -84,11 +92,17 @@ function ExerciseDetail({ e, onClose, onPick }: { e: Exercise; onClose: () => vo
           {e.secondary_muscles.map((m) => <Pill key={m}>{MUSCLE_NAME[m]}</Pill>)}
           <Pill>{EQUIPMENT_NAME[e.equipment]}</Pill>
           <Pill>{METRIC_TYPE_NAME[e.metric_type]}</Pill>
+          <Pill>{GROUP_NAME[exerciseGroup(e)]}</Pill>
           <Pill>{e.mechanic === "compound" ? "Samengesteld" : "Geïsoleerd"}</Pill>
           {e.unilateral && <Pill>Eenzijdig</Pill>}
           <Pill><Timer className="size-3" /> {e.default_rest}s rust</Pill>
         </div>
-        {e.instructions && <p className="text-[15px] leading-relaxed text-ink-2">{e.instructions}</p>}
+        {e.instructions && (
+          <div>
+            {e.source === "db" && <div className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Uitvoering (Engels, uit de open oefeningendatabase)</div>}
+            <p className="text-[15px] leading-relaxed text-ink-2" lang={e.source === "db" ? "en" : "nl"}>{e.instructions}</p>
+          </div>
+        )}
         <div className="flex gap-2">
           <Button variant={fav ? "primary" : "secondary"} onClick={() => toggleFavoriteExercise(e.id)}><Star className={cx("size-4", fav && "fill-current")} /> {fav ? "Favoriet" : "Favoriet maken"}</Button>
           {e.is_custom && <Button variant="secondary" onClick={() => setEditing(true)}><Pencil className="size-4" /> Bewerken</Button>}

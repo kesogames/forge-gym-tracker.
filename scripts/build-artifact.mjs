@@ -11,7 +11,33 @@ await rm(dest, { recursive: true, force: true });
 await mkdir(dest, { recursive: true });
 // "_" vooraan is gereserveerd door de artifact-host: _next wordt next
 await cp(path.join(out, "_next"), path.join(dest, "next"), { recursive: true });
-await cp(path.join(root, "public", "exercises"), path.join(dest, "exercises"), { recursive: true });
+// Afbeeldingen bundelen in pakketten van ~2 MB (artifact: max. ~500 bestanden).
+// Handgeschreven oefeningen eerst, zodat het eerste pakket de meest gebruikte bevat.
+{
+  const src = await readFile(path.join(root, "src/lib/data/exercises.ts"), "utf8");
+  const curated = [...new Set([...src.matchAll(/e\("[^"]+", "[^"]+", "([^"]+)"/g)].map((m) => m[1]))];
+  const all = (await readdir(path.join(root, "public", "exercises"))).sort();
+  const order = [...curated.filter((d) => all.includes(d)), ...all.filter((d) => !curated.includes(d))];
+  const index = {};
+  let pack = 0, chunks = [], size = 0;
+  const flush = async () => {
+    if (!chunks.length) return;
+    await writeFile(path.join(dest, `exercises-pack-${pack}.webp`), Buffer.concat(chunks));
+    pack++; chunks = []; size = 0;
+  };
+  for (const d of order) {
+    for (const f of ["0.webp", "1.webp"]) {
+      let buf;
+      try { buf = await readFile(path.join(root, "public", "exercises", d, f)); } catch { continue; }
+      index[`exercises/${d}/${f}`] = [pack, size, buf.length];
+      chunks.push(buf); size += buf.length;
+      if (size > 2_000_000) await flush();
+    }
+  }
+  await flush();
+  await writeFile(path.join(dest, "exercises-index.json"), JSON.stringify(index));
+  console.log(`afbeeldingen: ${Object.keys(index).length} in ${pack} pakketten`);
+}
 
 async function walk(dir) {
   const res = [];

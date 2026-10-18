@@ -59,6 +59,8 @@ export interface Exercise {
   default_rest: number; // seconden
   unilateral: boolean;
   is_custom: boolean;
+  /** "db" = automatisch uit free-exercise-db (Engelse naam/uitvoering), anders handmatig samengesteld */
+  source?: "db";
 }
 
 /** Eigen oefening van de gebruiker (opgeslagen in DB). */

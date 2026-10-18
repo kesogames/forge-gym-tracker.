@@ -142,7 +142,7 @@ test("actieve training overleeft het sluiten van de app", async ({ page, context
   await expect(page.getByTestId("workout-timer")).toBeVisible();
   await page.getByTestId("add-exercise").click();
   await page.getByLabel("Zoek oefening").fill("plank");
-  await page.getByRole("button", { name: /^Plank/ }).click();
+  await page.getByRole("button", { name: /^Plank/ }).first().click();
   await page.getByRole("button", { name: /1 oefening toevoegen/ }).click();
   await expect(page.getByTestId("exercise-card")).toHaveCount(1);
   await page.close();

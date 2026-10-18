@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { SPA } from "@/lib/nav";
+import { packedImageUrl } from "@/lib/imagePack";
 import { imageUrl } from "@/lib/data/exercises";
 import { MUSCLE_NAME } from "@/lib/data/muscles";
 import type { MuscleId } from "@/lib/types";
@@ -9,7 +11,19 @@ import { cx } from "./ui";
 export function ExerciseImage({ image, name, muscle, className, animate, frame = 0 }: { image: string | null; name: string; muscle?: MuscleId; className?: string; animate?: boolean; frame?: 0 | 1 }) {
   const [failed, setFailed] = useState(false);
   const [hover, setHover] = useState(false);
-  const src = imageUrl(image, animate && hover ? 1 : frame);
+  const raw = imageUrl(image, animate && hover ? 1 : frame);
+  const packed = SPA && !!raw && !raw.startsWith("data:") && !raw.startsWith("http");
+  const [blobSrc, setBlobSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!packed || !raw) return;
+    let alive = true;
+    packedImageUrl(raw).then((u) => alive && (u ? setBlobSrc(u) : setFailed(true)));
+    return () => {
+      alive = false;
+    };
+  }, [packed, raw]);
+  const src = packed ? blobSrc : raw;
+  if (packed && !blobSrc && !failed) return <div className={cx("bg-surface-2 animate-pulse", className)} aria-label={name} role="img" />;
   if (!src || failed) {
     const initials = name
       .replace(/\(.*?\)/g, "")

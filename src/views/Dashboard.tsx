@@ -16,6 +16,7 @@ import { formatKg, formatNumber } from "@/lib/domain/volume";
 import { levelFromXp, monthlyChallenges, totalXp, weekStreaks, XP } from "@/lib/domain/gamification";
 import { MUSCLES, MUSCLE_NAME } from "@/lib/data/muscles";
 import { celebrate } from "@/components/Celebrate";
+import { ActivityCalendar, Insights, LifetimeStrip, MuscleBalance, RecentRecords, TopLifts } from "@/components/DashboardExtras";
 
 function greeting(h: number) {
   if (h < 6) return "Goedenacht";
@@ -33,6 +34,9 @@ export default function Dashboard() {
   const ctx = useMemo(() => ({ bodyweight_kg: bw, include_bodyweight: settings.include_bodyweight_volume }), [bw, settings.include_bodyweight_volume]);
   const prs = useLiveQuery(() => db().exercise_prs.toArray(), [], []);
   const achievements = useLiveQuery(() => db().user_achievements.toArray(), [], []);
+  const goalRows = useLiveQuery(() => db().muscle_group_goals.toArray(), [], []);
+  const goals = useMemo(() => new Map(goalRows.map((g) => [g.muscle, g.sets_per_week])), [goalRows]);
+  const exMap = useExerciseMap();
   const now = new Date();
 
   const range = filterRange(f, now);
@@ -69,7 +73,19 @@ export default function Dashboard() {
         </Card>
       ) : (
         <>
-          <PeriodFilter f={f} setF={setF} />
+          <LifetimeStrip bundles={bundles} ctx={ctx} unit={settings.unit} />
+
+          <div className="grid lg:grid-cols-[1.6fr_1fr] gap-3">
+            <ActivityCalendar bundles={bundles} />
+            <Insights all={bundles} ctx={ctx} goals={goals} unit={settings.unit} />
+          </div>
+
+          <TopLifts bundles={bundles} exMap={exMap} unit={settings.unit} />
+
+          <div className="pt-2">
+            <SectionTitle>Statistieken per periode</SectionTitle>
+            <PeriodFilter f={f} setF={setF} />
+          </div>
 
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <Stat icon={CalendarCheck} label="Trainingen" value={formatNumber(s.sessions)} delta={prev ? s.sessions - p.sessions : null} />
@@ -81,6 +97,11 @@ export default function Dashboard() {
             <Consistency bundles={bundles} goal={settings.weekly_workout_goal} />
             <XpCard bundles={bundles} prsCount={prs.length} achievementXp={achievements.reduce((a, x) => a + x.xp, 0)} goal={settings.weekly_workout_goal} />
           </section>
+
+          <div className="grid lg:grid-cols-2 gap-3">
+            <MuscleBalance muscles={s.muscles} />
+            <RecentRecords prs={prs} exMap={exMap} unit={settings.unit} nameOf={(id) => exMap.get(id)?.name ?? bundles.flatMap((b) => b.exercises).find((e) => e.exercise_id === id)?.exercise_name ?? id} />
+          </div>
 
           <Charts bundles={bundles} cur={cur} range={range} ctx={ctx} period={f.period} exerciseFilter={f.exerciseId} />
 

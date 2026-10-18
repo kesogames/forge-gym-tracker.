@@ -1,5 +1,6 @@
 import type { Equipment, Exercise, Mechanic, MetricType, MuscleId } from "@/lib/types";
 import { METRICS_FOR_TYPE } from "./muscles";
+import DB from "./exercises-db.json";
 
 // Afbeeldingen: free-exercise-db (github.com/yuhonas/free-exercise-db),
 // uitgebracht onder de Unlicense (publiek domein). Lokaal gebundeld in
@@ -48,6 +49,14 @@ const PATTERN_MECHANIC: Record<string, Mechanic> = {
   olympic: "compound",
   cardio: "compound",
   plyo: "compound",
+  kb_ballistic: "compound",
+  landmine_press: "compound",
+  jump: "compound",
+  throw: "compound",
+  rotation_power: "compound",
+  complex: "compound",
+  crawl: "compound",
+  conditioning: "compound",
 };
 
 type Opts = { unilateral?: boolean; metrics?: Exercise["metrics"] };
@@ -268,9 +277,169 @@ export const EXERCISES: Exercise[] = [
   e("elliptical", "Crosstrainer", "Elliptical_Trainer", "quads", ["glutes", "hamstrings"], "cardio", "time", "cardio", 0, "Beweeg in een vloeiende elliptische beweging. Registreer de tijd."),
   e("jump-rope", "Touwtjespringen", null, "calves", ["quads", "shoulders"], "other", "time", "cardio", 45, "Spring met een springtouw op een constant tempo."),
   e("sled-push", "Sled push", "Sled_Push", "quads", ["glutes", "calves"], "other", "custom", "carry", 120, "Duw de slee met gestrekte armen en een lage houding.", { metrics: ["weight", "distance"] }),
+  // ───────── Kettlebell
+  e("kb-swing-2h", "Kettlebell swing (twee handen)", "One-Arm_Kettlebell_Swings", "glutes", ["hamstrings", "lower_back", "abs"], "kettlebell", "weight_reps", "kb_ballistic", 75, "Heupen naar achteren, kettlebell tussen je benen. Stuw explosief met je heupen tot borsthoogte, armen ontspannen. Billen en buik aanspannen bovenin."),
+  e("kb-swing-1h", "Kettlebell swing (één hand)", "One-Arm_Kettlebell_Swings", "glutes", ["hamstrings", "lower_back", "abs", "forearms"], "kettlebell", "weight_reps", "kb_ballistic", 75, "Als de swing, maar met één hand. Romp blijft recht en draait niet mee. Herhalingen per kant.", U),
+  e("kb-american-swing", "American swing", "One-Arm_Kettlebell_Swings", "glutes", ["hamstrings", "shoulders", "lower_back"], "kettlebell", "weight_reps", "kb_ballistic", 90, "Swing tot boven je hoofd met gestrekte armen. Alleen doen met goede schoudermobiliteit."),
+  e("kb-goblet-squat", "Kettlebell goblet squat", "Goblet_Squat", "quads", ["glutes", "abs"], "kettlebell", "weight_reps", "squat", 90, "Houd de kettlebell bij de hoorns voor je borst. Zak diep met je ellebogen tussen je knieën en kom terug."),
+  e("kb-front-squat-double", "Front squat (twee kettlebells)", "Front_Squats_With_Two_Kettlebells", "quads", ["glutes", "abs"], "kettlebell", "weight_reps", "squat", 120, "Twee kettlebells in de rack-positie op je borst. Zak rechtop naar beneden en druk terug. Gewicht per kettlebell."),
+  e("kb-clean", "Kettlebell clean", "One-Arm_Kettlebell_Clean", "glutes", ["hamstrings", "forearms", "shoulders"], "kettlebell", "weight_reps", "kb_ballistic", 75, "Swing de kettlebell naar achteren en trek hem met je heupen omhoog naar de rack-positie, zonder dat hij tegen je onderarm slaat. Per kant.", U),
+  e("kb-snatch", "Kettlebell snatch", "One-Arm_Kettlebell_Snatch", "glutes", ["shoulders", "hamstrings", "traps"], "kettlebell", "weight_reps", "kb_ballistic", 90, "In één explosieve beweging van tussen je benen naar boven je hoofd met gestrekte arm. Per kant.", U),
+  e("kb-press", "Kettlebell press (staand)", "One-Arm_Kettlebell_Military_Press_To_The_Side", "shoulders", ["triceps", "abs"], "kettlebell", "weight_reps", "overhead_press", 75, "Vanuit de rack-positie recht boven je hoofd drukken. Romp aangespannen, niet achterover leunen. Per kant.", U),
+  e("kb-push-press", "Kettlebell push press", "One-Arm_Kettlebell_Push_Press", "shoulders", ["triceps", "quads"], "kettlebell", "weight_reps", "overhead_press", 90, "Kleine dip in je knieën en gebruik die kracht om de kettlebell boven je hoofd te drukken. Per kant.", U),
+  e("kb-clean-press", "Kettlebell clean & press", "One-Arm_Kettlebell_Clean_and_Jerk", "shoulders", ["glutes", "hamstrings", "triceps"], "kettlebell", "weight_reps", "complex", 90, "Clean naar de rack-positie en direct door naar een press boven je hoofd. Per kant.", U),
+  e("kb-row", "Kettlebell row", "One-Arm_Kettlebell_Row", "back", ["biceps"], "kettlebell", "weight_reps", "horizontal_row", 75, "Voorovergebogen met rechte rug, trek de kettlebell naar je heup. Per kant.", U),
+  e("kb-gorilla-row", "Gorilla row", "Two-Arm_Kettlebell_Row", "back", ["biceps", "abs"], "kettlebell", "weight_reps", "horizontal_row", 75, "Twee kettlebells op de grond tussen je voeten, diepe hinge. Roei afwisselend links en rechts terwijl je de andere kettlebell op de grond houdt."),
+  e("kb-deadlift", "Kettlebell deadlift", "Kettlebell_Dead_Clean", "glutes", ["hamstrings", "lower_back", "quads"], "kettlebell", "weight_reps", "hinge", 90, "Kettlebell tussen je voeten. Heupen naar achteren, rug recht, kom rechtop door je heupen te strekken."),
+  e("kb-single-leg-rdl", "Eenbenige deadlift (kettlebell)", "Kettlebell_One-Legged_Deadlift", "hamstrings", ["glutes", "lower_back"], "kettlebell", "weight_reps", "hinge", 75, "Sta op één been, kettlebell in de tegenovergestelde hand. Buig voorover tot je romp bijna horizontaal is, achterste been gestrekt. Per been.", U),
+  e("kb-high-pull", "Kettlebell sumo high pull", "Kettlebell_Sumo_High_Pull", "traps", ["shoulders", "glutes", "quads"], "kettlebell", "weight_reps", "upright_row", 75, "Brede stand, kettlebell tussen je voeten. Kom explosief omhoog en trek de kettlebell met hoge ellebogen naar je kin."),
+  e("kb-turkish-getup", "Turkish get-up", "Kettlebell_Turkish_Get-Up_Lunge_style", "shoulders", ["abs", "glutes", "quads"], "kettlebell", "weight_reps", "complex", 90, "Van liggend naar staand en terug, met de kettlebell steeds recht boven je schouder. Langzaam en gecontroleerd. Per kant.", U),
+  e("kb-windmill", "Kettlebell windmill", "Kettlebell_Windmill", "abs", ["shoulders", "hamstrings", "glutes"], "kettlebell", "weight_reps", "rotation", 60, "Kettlebell boven je hoofd, kijk ernaar. Duw je heup opzij en zak met je vrije hand langs je been naar beneden. Per kant.", U),
+  e("kb-halo", "Kettlebell halo", null, "shoulders", ["abs", "traps"], "kettlebell", "weight_reps", "rotation", 45, "Houd de kettlebell bij de hoorns en draai hem in een cirkel rond je hoofd. Romp stil. Herhalingen per richting."),
+  e("kb-figure-8", "Kettlebell figure 8", "Kettlebell_Figure_8", "abs", ["glutes", "forearms"], "kettlebell", "weight_reps", "rotation", 45, "In een halve hinge geef je de kettlebell in een achtvorm tussen je benen door van hand naar hand."),
+  e("kb-around-world", "Around the world", "Kettlebell_Pass_Between_The_Legs", "abs", ["forearms", "shoulders"], "kettlebell", "weight_reps", "rotation", 45, "Geef de kettlebell rond je middel door van hand naar hand. Romp stil, wissel na de helft van richting."),
+  e("kb-thruster", "Kettlebell thruster", "Kettlebell_Thruster", "quads", ["shoulders", "glutes", "triceps"], "kettlebell", "weight_reps", "complex", 90, "Front squat met de kettlebell(s) in de rack-positie en druk ze bij het omhoogkomen in één beweging boven je hoofd."),
+  e("kb-reverse-lunge", "Reverse lunge (kettlebell)", "Dumbbell_Rear_Lunge", "quads", ["glutes"], "kettlebell", "weight_reps", "lunge", 75, "Kettlebell in de rack-positie of naast je lichaam. Stap naar achteren en zak. Per been.", U),
+  e("kb-floor-press", "Kettlebell floor press", "One-Arm_Kettlebell_Floor_Press", "chest", ["triceps", "shoulders"], "kettlebell", "weight_reps", "horizontal_press", 75, "Lig op de grond. Druk de kettlebell recht omhoog en zak tot je elleboog de grond raakt. Per kant.", U),
+  e("kb-pistol", "Pistol squat (kettlebell)", "Kettlebell_Pistol_Squat", "quads", ["glutes", "abs"], "kettlebell", "weight_reps", "squat", 90, "Op één been diep squatten met het andere been gestrekt voor je. Kettlebell voor je borst als tegengewicht. Per been.", U),
+  e("kb-farmer-carry", "Kettlebell farmer's carry", "Farmers_Walk", "forearms", ["traps", "abs"], "kettlebell", "custom", "carry", 75, "Loop met een zware kettlebell in elke hand, rechtop, korte stappen.", { metrics: ["weight", "distance"] }),
+  e("kb-suitcase-carry", "Suitcase carry", "Farmers_Walk", "abs", ["forearms", "traps"], "kettlebell", "custom", "carry", 60, "Loop met één kettlebell aan één kant. Blijf rechtop en voorkom dat je opzij hangt. Afstand per kant.", { metrics: ["weight", "distance"], unilateral: true }),
+
+  // ───────── Landmine (halterstang in hoekhouder of hoek)
+  e("landmine-press", "Landmine press (één arm)", null, "shoulders", ["chest", "triceps", "abs"], "barbell", "weight_reps", "landmine_press", 75, "Staand of half geknield, uiteinde van de stang bij je schouder. Druk schuin omhoog en naar voren tot je arm gestrekt is. Gewicht = schijven op de stang. Per kant.", U),
+  e("landmine-press-2h", "Landmine press (twee handen)", null, "chest", ["shoulders", "triceps"], "barbell", "weight_reps", "landmine_press", 90, "Houd het uiteinde met beide handen voor je borst en druk schuin omhoog. Vriendelijk voor de schouders."),
+  e("landmine-squat", "Landmine squat", null, "quads", ["glutes", "abs"], "barbell", "weight_reps", "squat", 90, "Houd het uiteinde voor je borst, leun licht in de stang en squat diep. Goede techniekoefening."),
+  e("landmine-row", "Landmine row (T-bar)", "T-Bar_Row_with_Handle", "back", ["biceps", "traps", "lower_back"], "barbell", "weight_reps", "horizontal_row", 90, "Sta over de stang met een V-handgreep onder de schijven. Rug recht, trek naar je borst."),
+  e("landmine-meadows-row", "Meadows row", null, "back", ["biceps", "forearms"], "barbell", "weight_reps", "horizontal_row", 75, "Sta haaks naast het uiteinde, pak het dikke deel bovenhands en roei met één arm naar je heup. Per kant.", U),
+  e("landmine-rdl", "Landmine Roemeense deadlift", null, "hamstrings", ["glutes", "lower_back"], "barbell", "weight_reps", "hinge", 90, "Houd het uiteinde met beide handen voor je heupen en buig vanuit de heupen naar voren met een rechte rug."),
+  e("landmine-sl-rdl", "Landmine eenbenige RDL", null, "hamstrings", ["glutes", "abs"], "barbell", "weight_reps", "hinge", 75, "Uiteinde in de tegenovergestelde hand, buig voorover op één been. Zeer stabiel door de stang. Per been.", U),
+  e("landmine-reverse-lunge", "Landmine reverse lunge", null, "quads", ["glutes", "abs"], "barbell", "weight_reps", "lunge", 75, "Uiteinde voor je borst of bij één schouder. Stap naar achteren en zak. Per been.", U),
+  e("landmine-thruster", "Landmine thruster", null, "quads", ["shoulders", "glutes", "triceps"], "barbell", "weight_reps", "complex", 90, "Squat met het uiteinde voor je borst en druk bij het omhoogkomen explosief schuin omhoog."),
+  e("landmine-rotation", "Landmine rotation (rainbow)", "Landmine_180s", "abs", ["shoulders", "glutes"], "barbell", "weight_reps", "rotation_power", 60, "Armen gestrekt, uiteinde boven je hoofd. Breng de stang in een boog naar je linkerheup en terug naar rechts. Draai vanuit je heupen en voeten. Herhalingen per kant."),
+  e("landmine-180", "Landmine 180's", "Landmine_180s", "abs", ["shoulders"], "barbell", "weight_reps", "rotation_power", 60, "Zittend of staand met het uiteinde voor je borst. Draai de stang van heup naar heup terwijl je armen gestrekt blijven."),
+  e("landmine-rotational-press", "Landmine rotational press", null, "shoulders", ["abs", "glutes", "chest"], "barbell", "weight_reps", "rotation_power", 75, "Begin met het uiteinde bij je schouder en je heup ingedraaid. Draai explosief open en druk de stang schuin omhoog, zoals een stoot. Per kant.", U),
+  e("landmine-jammer", "Landmine jammer", "Landmine_Linear_Jammer", "shoulders", ["quads", "triceps", "glutes"], "barbell", "weight_reps", "landmine_press", 90, "Vanuit een halve squat explosief uitstrekken en de stang met beide handen omhoog stoten."),
+  e("landmine-viper", "Landmine viper press", null, "shoulders", ["quads", "abs", "triceps"], "barbell", "weight_reps", "complex", 90, "Squat met het uiteinde bij één schouder, kom omhoog, draai en druk uit. Wissel bovenin van schouder."),
+  e("landmine-hip-thrust", "Landmine hip thrust", null, "glutes", ["hamstrings"], "barbell", "weight_reps", "hip_thrust", 75, "Bovenrug tegen een bank, het dikke uiteinde van de stang over je heupen. Duw je heupen omhoog."),
+  e("landmine-deadlift", "Landmine deadlift", null, "glutes", ["hamstrings", "quads", "lower_back"], "barbell", "weight_reps", "hinge", 90, "Sta over het uiteinde met beide handen eromheen en kom rechtop. Prettig om de hinge aan te leren."),
+
+  // ───────── Plyometrie / sprongkracht
+  e("jump-squat", "Jump squat", "Freehand_Jump_Squat", "quads", ["glutes", "calves"], "bodyweight", "bodyweight_reps", "jump", 75, "Kwart- tot halve squat en spring explosief omhoog. Land zacht door je knieën en ga direct door."),
+  e("weighted-jump-squat", "Jump squat met gewicht", "Weighted_Jump_Squat", "quads", ["glutes", "calves"], "dumbbell", "weight_reps", "jump", 90, "Jump squat met lichte dumbbells of een stang. Snelheid belangrijker dan gewicht."),
+  e("box-jump-lateral", "Laterale box jump", "Lateral_Box_Jump", "quads", ["glutes", "adductors", "abductors"], "bodyweight", "bodyweight_reps", "jump", 75, "Spring zijwaarts op een kist en stap of spring terug. Per kant."),
+  e("depth-jump", "Depth jump", "Linear_Depth_Jump", "quads", ["calves", "glutes"], "bodyweight", "bodyweight_reps", "jump", 120, "Stap van een kist, land en spring direct zo hoog of ver mogelijk. Kort grondcontact. Alleen uitgerust doen."),
+  e("broad-jump", "Broad jump (verspringen)", "Standing_Long_Jump", "glutes", ["quads", "hamstrings", "calves"], "bodyweight", "custom", "jump", 90, "Zwaai je armen en spring zo ver mogelijk vooruit. Land stabiel. Registreer de afstand.", { metrics: ["reps", "distance"] }),
+  e("tuck-jump", "Tuck jump", "Knee_Tuck_Jump", "quads", ["abs", "calves"], "bodyweight", "bodyweight_reps", "jump", 60, "Spring omhoog en trek je knieën naar je borst. Land zacht en ga direct door."),
+  e("split-jump", "Split jump (jumping lunge)", "Split_Jump", "quads", ["glutes", "calves"], "bodyweight", "bodyweight_reps", "jump", 60, "Vanuit een lunge omhoog springen en in de lucht van been wisselen. Herhalingen totaal."),
+  e("skater-jump", "Skater jumps", "Lateral_Bound", "glutes", ["quads", "abductors", "calves"], "bodyweight", "bodyweight_reps", "jump", 60, "Spring zijwaarts van been naar been, zoals een schaatser. Land op één been en stabiliseer kort."),
+  e("lateral-bound", "Lateral bound", "Lateral_Bound", "glutes", ["quads", "abductors"], "bodyweight", "bodyweight_reps", "jump", 60, "Explosief zijwaarts afzetten op één been en landen op het andere. Per kant."),
+  e("single-leg-hop", "Eenbenige hops", "Single-Leg_Hop_Progression", "calves", ["quads", "glutes"], "bodyweight", "bodyweight_reps", "jump", 60, "Spring herhaaldelijk op één been vooruit of over lijntjes. Per been.", U),
+  e("hurdle-hops", "Hurdle hops", "Hurdle_Hops", "calves", ["quads", "glutes"], "bodyweight", "bodyweight_reps", "jump", 75, "Spring met beide voeten over een rij lage hordes of kegels, kort grondcontact."),
+  e("pogo-jumps", "Pogo jumps", "Rope_Jumping", "calves", ["quads"], "bodyweight", "bodyweight_reps", "jump", 45, "Kleine, snelle sprongen vanuit je enkels met bijna gestrekte knieën."),
+  e("star-jump", "Star jumps", "Star_Jump", "quads", ["shoulders", "calves"], "bodyweight", "bodyweight_reps", "jump", 45, "Spring omhoog en spreid armen en benen als een ster. Land zacht."),
+  e("frog-hops", "Frog hops", "Frog_Hops", "quads", ["glutes", "calves"], "bodyweight", "bodyweight_reps", "jump", 60, "Diep in de squat, spring vooruit en land weer diep."),
+  e("plyo-push-up", "Plyo push-up (klap push-up)", "Plyo_Push-up", "chest", ["triceps", "shoulders"], "bodyweight", "bodyweight_reps", "jump", 75, "Druk zo explosief omhoog dat je handen loskomen, klap eventueel, en land zacht."),
+  e("box-jump-step-down", "Seated box jump", "Dumbbell_Seated_Box_Jump", "quads", ["glutes"], "bodyweight", "bodyweight_reps", "jump", 75, "Zit op een bank, sta explosief op en spring direct op een kist. Traint pure startkracht."),
+
+  // ───────── Medicine ball / rotatiekracht
+  e("mb-slam", "Medicine ball slam", "Overhead_Slam", "abs", ["back", "shoulders"], "other", "weight_reps", "throw", 60, "Til de bal boven je hoofd en smijt hem met volle kracht op de grond. Vang of pak op en herhaal."),
+  e("mb-rotational-throw", "Rotatie-worp tegen muur", "Medicine_Ball_Scoop_Throw", "abs", ["glutes", "shoulders"], "other", "weight_reps", "rotation_power", 60, "Zijwaarts naast een muur. Draai weg en gooi de bal explosief vanuit je heupen tegen de muur. Per kant."),
+  e("mb-scoop-toss", "Scoop toss", "Medicine_Ball_Scoop_Throw", "glutes", ["hamstrings", "shoulders"], "other", "weight_reps", "throw", 60, "Bal tussen je benen, explosieve heupstrekking en gooi de bal naar voren of achterover omhoog."),
+  e("mb-chest-pass", "Medicine ball chest pass", "Medicine_Ball_Chest_Pass", "chest", ["triceps", "shoulders"], "other", "weight_reps", "throw", 60, "Stoot de bal explosief vanaf je borst tegen een muur of naar een partner."),
+  e("mb-overhead-throw", "Overhead throw", "Standing_Two-Arm_Overhead_Throw", "back", ["shoulders", "abs", "triceps"], "other", "weight_reps", "throw", 60, "Bal achter je hoofd en gooi hem met beide armen zo hard mogelijk naar voren."),
+  e("mb-backward-throw", "Achterwaartse worp", "Backward_Medicine_Ball_Throw", "glutes", ["hamstrings", "back"], "other", "weight_reps", "throw", 75, "Bal tussen je benen, explosief uitstrekken en de bal over je hoofd naar achteren gooien."),
+  e("wall-ball", "Wall ball", null, "quads", ["shoulders", "glutes"], "other", "weight_reps", "complex", 75, "Squat met de bal voor je borst en gooi hem bij het omhoogkomen naar een doel hoog op de muur. Vang en ga direct door."),
+  e("mb-russian-twist", "Russian twist met bal", "Medicine_Ball_Full_Twist", "abs", [], "other", "weight_reps", "rotation", 45, "Zittend, benen los van de grond. Tik de bal links en rechts naast je heup."),
+  e("cable-woodchop-low-high", "Woodchop (laag naar hoog)", "Standing_Cable_Wood_Chop", "abs", ["shoulders", "glutes"], "cable", "weight_reps", "rotation", 45, "Katrol laag. Trek de handgreep diagonaal over je lichaam omhoog, draai vanuit je heupen. Per kant.", U),
+  e("cable-rotation", "Cable rotation (horizontaal)", "Standing_Cable_Wood_Chop", "abs", ["shoulders"], "cable", "weight_reps", "rotation", 45, "Katrol op borsthoogte, armen gestrekt. Draai je romp weg van de katrol en kom gecontroleerd terug. Per kant.", U),
+  e("pallof-rotation", "Pallof press met rotatie", "Pallof_Press_With_Rotation", "abs", ["shoulders"], "cable", "weight_reps", "rotation", 45, "Pallof press, maar draai bij gestrekte armen weg van de katrol en terug. Per kant.", U),
+  e("band-pull-apart", "Band pull-apart", "Band_Pull_Apart", "shoulders", ["traps", "back"], "band", "bodyweight_reps", "rear_delt", 45, "Houd een band op schouderhoogte en trek hem uit elkaar tot hij je borst raakt."),
+  e("plate-twist", "Plate twist", "Plate_Twist", "abs", [], "other", "weight_reps", "rotation", 45, "Zittend, schijf voor je borst. Draai van links naar rechts."),
+  e("seated-barbell-twist", "Barbell twist", "Seated_Barbell_Twist", "abs", [], "barbell", "weight_reps", "rotation", 45, "Stang op je rug, zittend of staand. Draai gecontroleerd van links naar rechts."),
+
+  // ───────── Combinaties / conditie
+  e("man-maker", "Man maker", "Alternating_Renegade_Row", "chest", ["back", "shoulders", "quads", "abs"], "dumbbell", "weight_reps", "complex", 90, "Push-up op dumbbells, roei links en rechts, spring naar je handen, clean de dumbbells en druk ze boven je hoofd. Dat is één herhaling."),
+  e("devil-press", "Devil press", null, "shoulders", ["glutes", "hamstrings", "chest"], "dumbbell", "weight_reps", "complex", 90, "Burpee met je handen op de dumbbells, spring terug en zwaai de dumbbells in één beweging van de grond tot boven je hoofd."),
+  e("renegade-row", "Renegade row", "Alternating_Renegade_Row", "back", ["abs", "biceps", "chest"], "dumbbell", "weight_reps", "horizontal_row", 75, "In push-uppositie op twee dumbbells. Roei afwisselend links en rechts zonder je heupen te draaien."),
+  e("db-snatch", "Dumbbell snatch", null, "shoulders", ["glutes", "hamstrings", "traps"], "dumbbell", "weight_reps", "olympic", 90, "Dumbbell tussen je voeten, explosief uitstrekken en in één beweging boven je hoofd trekken. Per kant.", U),
+  e("db-clean-press", "Dumbbell clean & press", "Dumbbell_Clean", "shoulders", ["glutes", "hamstrings", "triceps"], "dumbbell", "weight_reps", "complex", 90, "Clean de dumbbells naar je schouders en druk ze direct boven je hoofd."),
+  e("db-thruster", "Dumbbell thruster", "Kettlebell_Thruster", "quads", ["shoulders", "glutes"], "dumbbell", "weight_reps", "complex", 90, "Front squat met dumbbells op je schouders en druk ze bij het omhoogkomen boven je hoofd."),
+  e("squat-to-press", "Squat to press", null, "quads", ["shoulders", "glutes"], "dumbbell", "weight_reps", "complex", 75, "Goblet squat en druk de dumbbell bovenin recht boven je hoofd."),
+  e("lunge-twist", "Lunge met rotatie", "Bodyweight_Walking_Lunge", "quads", ["abs", "glutes"], "other", "weight_reps", "lunge", 60, "Lunge vooruit en draai je romp met een gewicht of bal naar je voorste been. Per kant.", U),
+  e("rdl-row", "RDL + row", "Bent_Over_Two-Dumbbell_Row", "hamstrings", ["back", "glutes", "biceps"], "dumbbell", "weight_reps", "complex", 90, "Roemeense deadlift met dumbbells, onderin een roeibeweging en dan weer omhoog."),
+  e("clean-and-jerk", "Clean and jerk", "Clean_and_Jerk", "quads", ["glutes", "shoulders", "traps", "hamstrings"], "barbell", "weight_reps", "olympic", 180, "Clean de stang naar je schouders en stoot hem met een dip en drive boven je hoofd, eventueel in spreidstand."),
+  e("snatch", "Snatch", "Snatch", "hamstrings", ["glutes", "shoulders", "traps", "quads"], "barbell", "weight_reps", "olympic", 180, "Brede greep, trek de stang in één beweging van de grond tot boven je hoofd en vang hem in een squat."),
+  e("hang-clean", "Hang clean", "Hang_Clean", "hamstrings", ["glutes", "traps", "quads"], "barbell", "weight_reps", "olympic", 150, "Begin met de stang boven je knieën. Explosieve heupstrekking en vang de stang op je schouders."),
+  e("push-press", "Push press", "Push_Press", "shoulders", ["triceps", "quads"], "barbell", "weight_reps", "overhead_press", 120, "Dip kort in je knieën en gebruik die kracht om de stang boven je hoofd te drukken."),
+  e("burpee-pull-up", "Burpee pull-up", null, "back", ["chest", "quads", "biceps"], "bodyweight", "bodyweight_reps", "complex", 75, "Burpee onder een stang en spring in een pull-up."),
+  e("bear-crawl", "Bear crawl", "Bear_Crawl_Sled_Drags", "abs", ["shoulders", "quads"], "bodyweight", "custom", "crawl", 60, "Op handen en voeten met je knieën net boven de grond, kruip vooruit en achteruit.", { metrics: ["distance", "time"] }),
+  e("battle-ropes", "Battle ropes", "Battling_Ropes", "shoulders", ["abs", "forearms"], "other", "time", "conditioning", 60, "Maak golven met beide touwen, afwisselend of tegelijk, vanuit een halve squat."),
+  e("sled-pull", "Sled pull / drag", "Sled_Drag_-_Harness", "quads", ["glutes", "hamstrings", "back"], "other", "custom", "carry", 120, "Trek de slee achter je aan met een harnas of touw, of trek hem hand over hand naar je toe.", { metrics: ["weight", "distance"] }),
+  e("sledgehammer", "Sledgehammer swings", "Sledgehammer_Swings", "abs", ["shoulders", "back", "forearms"], "other", "bodyweight_reps", "rotation_power", 60, "Sla met een moker op een band, afwisselend van links en rechts. Kracht uit je heupen."),
+  e("tire-flip", "Tire flip", "Tire_Flip", "glutes", ["hamstrings", "quads", "back", "chest"], "other", "bodyweight_reps", "complex", 120, "Hurk, pak de band onderaan, duw met je heupen omhoog en kantel hem."),
+  e("sandbag-carry", "Sandbag carry / load", "Sandbag_Load", "glutes", ["back", "abs", "quads"], "other", "custom", "carry", 90, "Til de zandzak op en draag hem voor je borst of over je schouder.", { metrics: ["weight", "distance"] }),
+  e("assault-bike", "Assault bike / air bike", "Bicycling_Stationary", "quads", ["shoulders", "hamstrings"], "cardio", "custom", "cardio", 0, "Fietsen met beweegbare armen. Registreer tijd en calorieën of afstand.", { metrics: ["time", "distance"] }),
+  e("ski-erg", "SkiErg", "Rowing_Stationary", "back", ["triceps", "abs", "shoulders"], "cardio", "distance", "cardio", 0, "Trek de handgrepen met gestrekte armen omlaag en buig mee in je heupen. Registreer afstand en tijd."),
+  e("rope-climb", "Touwklimmen", "Rope_Climb", "back", ["biceps", "forearms"], "bodyweight", "bodyweight_reps", "vertical_pull", 120, "Klim met armen en voeten (klem) in het touw naar boven en zak gecontroleerd."),
+  e("muscle-up", "Muscle-up", "Muscle_Up", "back", ["chest", "triceps"], "bodyweight", "bodyweight_reps", "vertical_pull", 150, "Explosieve pull-up die overgaat in een dip boven de stang of ringen."),
+
+  // ───────── Core
+  e("dead-bug", "Dead bug", "Dead_Bug", "abs", [], "bodyweight", "bodyweight_reps", "plank", 45, "Op je rug, armen en knieën omhoog. Strek afwisselend tegenovergestelde arm en been uit zonder je onderrug los te laten."),
+  e("hollow-hold", "Hollow hold", null, "abs", [], "bodyweight", "time", "plank", 45, "Op je rug, onderrug in de grond, schouders en gestrekte benen net boven de grond. Houd vast."),
+  e("bird-dog", "Bird dog", null, "lower_back", ["abs", "glutes"], "bodyweight", "bodyweight_reps", "plank", 45, "Op handen en knieën strek je tegenovergestelde arm en been uit en houd kort vast. Per kant."),
+  e("v-up", "V-up", "Jackknife_Sit-Up", "abs", [], "bodyweight", "bodyweight_reps", "crunch", 45, "Kom vanuit liggend tegelijk met gestrekte armen en benen omhoog tot een V."),
+  e("flutter-kicks", "Flutter kicks", "Flutter_Kicks", "abs", [], "bodyweight", "time", "leg_raise", 45, "Op je rug, benen gestrekt net boven de grond, en trap kleine slagen op en neer."),
+  e("windshield-wipers", "Windshield wipers", null, "abs", ["lower_back"], "bodyweight", "bodyweight_reps", "rotation", 60, "Liggend of hangend met benen omhoog, draai je benen van links naar rechts. Herhalingen totaal."),
+  e("superman", "Superman", "Superman", "lower_back", ["glutes"], "bodyweight", "bodyweight_reps", "back_extension", 45, "Op je buik, til armen en benen tegelijk op en houd kort vast."),
+  e("plank-shoulder-tap", "Plank met shoulder taps", null, "abs", ["shoulders"], "bodyweight", "bodyweight_reps", "plank", 45, "In hoge plank tik je afwisselend je schouder aan zonder je heupen te laten draaien."),
+  e("side-plank-rotation", "Side plank met rotatie", "Side_Bridge", "abs", ["shoulders"], "bodyweight", "bodyweight_reps", "rotation", 45, "In zijwaartse plank draai je je bovenste arm onder je lichaam door en weer open. Per kant.", U),
+  e("ab-rollout-barbell", "Barbell rollout", "Ab_Roller", "abs", ["shoulders", "lower_back"], "barbell", "bodyweight_reps", "plank", 60, "Geknield met handen op een stang met schijven. Rol naar voren en terug met een stabiele romp."),
 ];
 
+// Uitgebreide bibliotheek uit free-exercise-db (Engelse naam en uitvoering), na de
+// handgeschreven oefeningen zodat die bij zoeken voorrang krijgen.
+const DB_EXERCISES: Exercise[] = (DB as Omit<Exercise, "is_custom" | "source">[]).map((x) => ({ ...x, is_custom: false, source: "db" }));
+EXERCISES.push(...DB_EXERCISES);
+
 export const EXERCISE_BY_ID: Map<string, Exercise> = new Map(EXERCISES.map((x) => [x.id, x]));
+
+export type ExerciseGroup = "kracht" | "plyo" | "explosief" | "rotatie" | "combinatie" | "landmine" | "cardio";
+
+export const GROUP_NAME: Record<ExerciseGroup, string> = {
+  kracht: "Kracht",
+  plyo: "Plyometrie",
+  explosief: "Explosief & olympisch",
+  rotatie: "Rotatie & core",
+  combinatie: "Combinatie & conditie",
+  landmine: "Landmine",
+  cardio: "Cardio",
+};
+
+export function exerciseGroup(e: Pick<Exercise, "id" | "name" | "pattern">): ExerciseGroup {
+  if (/landmine/i.test(e.id) || /landmine/i.test(e.name)) return "landmine";
+  switch (e.pattern) {
+    case "jump":
+    case "plyo":
+    case "throw":
+      return "plyo";
+    case "olympic":
+    case "kb_ballistic":
+      return "explosief";
+    case "rotation":
+    case "rotation_power":
+    case "plank":
+      return "rotatie";
+    case "complex":
+    case "conditioning":
+    case "crawl":
+    case "carry":
+      return "combinatie";
+    case "cardio":
+      return "cardio";
+    default:
+      return "kracht";
+  }
+}
 
 export function imageUrl(image: string | null, frame: 0 | 1 = 0): string | null {
   if (!image) return null;
