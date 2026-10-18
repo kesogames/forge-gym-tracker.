@@ -1,5 +1,6 @@
 import type { MuscleId, SetCountMethod, WorkoutExercise, WorkoutSession, WorkoutSet } from "@/lib/types";
 import { emptyTotals, addSet, muscleSetCounts, setVolume, isWorkingSet, estimate1RM, type Totals, type VolumeContext } from "@/lib/domain/volume";
+import { isMobilityExercise } from "@/lib/data/exercises";
 import { inRange, type Range, weekKey, addDays, startOfWeek, toYmd } from "@/lib/domain/periods";
 
 export interface BundleLike {
@@ -8,8 +9,11 @@ export interface BundleLike {
   sets: WorkoutSet[];
 }
 
+// Mobiliteit en stretchen tellen niet mee als werksets, volume of spiersets.
+const training = (exs: WorkoutExercise[]) => exs.filter((e) => !isMobilityExercise(e.exercise_id));
+
 export function sessionTotals(b: BundleLike, ctx: VolumeContext): Totals {
-  const exById = new Map(b.exercises.map((e) => [e.id, e]));
+  const exById = new Map(training(b.exercises).map((e) => [e.id, e]));
   const t = emptyTotals();
   for (const s of b.sets) {
     const ex = exById.get(s.workout_exercise_id);
@@ -19,7 +23,7 @@ export function sessionTotals(b: BundleLike, ctx: VolumeContext): Totals {
 }
 
 export function sessionMuscles(b: BundleLike, method: SetCountMethod) {
-  const exById = new Map(b.exercises.map((e) => [e.id, e]));
+  const exById = new Map(training(b.exercises).map((e) => [e.id, e]));
   return muscleSetCounts(
     b.sets.flatMap((s) => {
       const ex = exById.get(s.workout_exercise_id);

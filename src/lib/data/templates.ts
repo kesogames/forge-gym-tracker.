@@ -49,6 +49,15 @@ export function exampleTemplates(uid: () => string): TemplateFullInput[] {
       uid,
     ),
     build(
+      "Mobiliteit & stretch",
+      "Korte routine van ca. 15 minuten. Ideaal als warming-up, op rustdagen of na het trainen.",
+      [
+        ["Mobiliteit", [["cat-cow", 1, 8, 10], ["worlds-greatest-stretch", 2, 5, 5], ["thoracic-rotation", 2, 8, 8], ["hip-90-90", 2, 8, 10], ["deep-squat-hold", 2, null, null], ["band-dislocates", 2, 10, 12]]],
+        ["Stretchen", [["couch-stretch", 2, null, null], ["pigeon-stretch", 2, null, null], ["hamstring-stretch", 2, null, null], ["doorway-chest-stretch", 2, null, null], ["childs-pose", 1, null, null]]],
+      ],
+      uid,
+    ),
+    build(
       "Full Body 3x",
       "Drie keer per week het hele lichaam. Ideaal om mee te beginnen of bij weinig tijd.",
       [

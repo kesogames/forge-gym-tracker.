@@ -15,7 +15,7 @@ const index = await (await fetch(`${BASE}/dist/exercises.json`)).json();
 
 const MUSCLE = { abdominals: "abs", abductors: "abductors", adductors: "adductors", biceps: "biceps", calves: "calves", chest: "chest", forearms: "forearms", glutes: "glutes", hamstrings: "hamstrings", lats: "back", "lower back": "lower_back", "middle back": "back", neck: "traps", quadriceps: "quads", shoulders: "shoulders", traps: "traps", triceps: "triceps" };
 const EQUIP = { barbell: "barbell", dumbbell: "dumbbell", cable: "cable", machine: "machine", "body only": "bodyweight", kettlebells: "kettlebell", "e-z curl bar": "ez_bar", bands: "band" };
-const KEEP = new Set(["strength", "plyometrics", "olympic weightlifting", "powerlifting", "strongman", "cardio"]);
+const KEEP = new Set(["strength", "plyometrics", "olympic weightlifting", "powerlifting", "strongman", "cardio", "stretching"]);
 
 const out = [];
 for (const x of index) {
@@ -24,16 +24,17 @@ for (const x of index) {
   if (!primary) continue;
   const secondary = [...new Set(x.secondaryMuscles.map((m) => MUSCLE[m]).filter((m) => m && m !== primary))];
   const equipment = x.category === "cardio" ? "cardio" : EQUIP[x.equipment] ?? "other";
-  const isTime = x.category === "cardio" || /\b(plank|hold|bridge)\b/i.test(x.name);
+  const isTime = x.category === "cardio" || x.category === "stretching" || /\b(plank|hold|bridge)\b/i.test(x.name);
   const isCarry = /\b(walk|carry|drag)\b/i.test(x.name) && x.category === "strongman";
   const metric_type = isCarry ? "custom" : isTime ? "time" : equipment === "bodyweight" ? "bodyweight_reps" : "weight_reps";
   const mechanic = x.mechanic === "isolation" ? "isolation" : "compound";
-  const rest = x.category === "olympic weightlifting" || x.category === "powerlifting" ? 150 : x.category === "plyometrics" ? 75 : x.category === "cardio" ? 0 : mechanic === "compound" ? 90 : 60;
+  const rest = x.category === "stretching" ? 15 : x.category === "olympic weightlifting" || x.category === "powerlifting" ? 150 : x.category === "plyometrics" ? 75 : x.category === "cardio" ? 0 : mechanic === "compound" ? 90 : 60;
+  const name = x.name.replace(/-SMR$/, " (foam roller)");
   let instructions = x.instructions.join(" ").replace(/\s+/g, " ").trim();
   if (instructions.length > 420) instructions = instructions.slice(0, 417).replace(/\s\S*$/, "") + "…";
   out.push({
     id: "db-" + x.id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-    name: x.name,
+    name,
     image: x.images?.length ? x.id : null,
     primary_muscle: primary,
     secondary_muscles: secondary,
@@ -41,7 +42,7 @@ for (const x of index) {
     metric_type,
     metrics: isCarry ? ["weight", "distance"] : isTime ? ["time"] : ["weight", "reps"],
     mechanic,
-    pattern: { plyometrics: "jump", "olympic weightlifting": "olympic", strongman: "complex", cardio: "cardio" }[x.category] ?? (/twist|rotation|chop|windmill/i.test(x.name) ? "rotation" : `db-${primary}-${mechanic}`),
+    pattern: x.category === "stretching" && /SMR|circles|swing|crosses|raises|groiners|inchworm|kick|hops|tilt|vacuum|superman|squats|lunge|windmills|rotation|dynamic/i.test(x.name) ? "mobility" : { stretching: "stretch", plyometrics: "jump", "olympic weightlifting": "olympic", strongman: "complex", cardio: "cardio" }[x.category] ?? (/twist|rotation|chop|windmill/i.test(x.name) ? "rotation" : `db-${primary}-${mechanic}`),
     instructions,
     default_rest: rest,
     unilateral: /\b(one-arm|one arm|single-arm|single-leg|one-leg|one legged|single leg)\b/i.test(x.name),

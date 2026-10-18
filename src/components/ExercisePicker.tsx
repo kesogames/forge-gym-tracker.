@@ -69,6 +69,14 @@ export function ExerciseFilters({ f, setF, showFav = true }: { f: ExerciseFilter
           </button>
         )}
       </div>
+      <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-5 px-5" role="group" aria-label="Soort oefening">
+        <Chip active={!f.group} onClick={() => setF({ ...f, group: null })}>Alles</Chip>
+        {(Object.keys(GROUP_NAME) as ExerciseGroup[]).map((g) => (
+          <Chip key={g} active={f.group === g} onClick={() => setF({ ...f, group: f.group === g ? null : g })} data-testid={`group-${g}`}>
+            {GROUP_NAME[g]}
+          </Chip>
+        ))}
+      </div>
       <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-5 px-5">
         {showFav && (
           <Chip active={f.favorites} onClick={() => setF({ ...f, favorites: !f.favorites })}>
@@ -82,13 +90,7 @@ export function ExerciseFilters({ f, setF, showFav = true }: { f: ExerciseFilter
           </Chip>
         ))}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <select aria-label="Soort oefening" value={f.group ?? ""} onChange={(e) => setF({ ...f, group: (e.target.value || null) as ExerciseGroup | null })} className={cx(inputCls, "h-10 text-sm px-3 min-w-0 col-span-2 sm:col-span-1")}>
-          <option value="">Alle soorten</option>
-          {Object.entries(GROUP_NAME).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
+      <div className="grid grid-cols-2 gap-2">
         <select aria-label="Materiaal" value={f.equipment ?? ""} onChange={(e) => setF({ ...f, equipment: (e.target.value || null) as Equipment | null })} className={cx(inputCls, "h-10 text-sm px-3 min-w-0")}>
           <option value="">Alle materialen</option>
           {Object.entries(EQUIPMENT_NAME).map(([k, v]) => (
@@ -113,7 +115,7 @@ export function ExerciseRow({ e, selected, onClick, right, favorite }: { e: Exer
       onClick={onClick}
       className={cx("w-full flex items-center gap-3 p-2 rounded-2xl text-left transition", selected ? "bg-accent-soft" : "hover:bg-surface-2 active:bg-surface-2")}
     >
-      <ExerciseImage image={e.image} name={e.name} muscle={e.primary_muscle} className="size-14 rounded-xl shrink-0" />
+      <ExerciseImage image={e.image} name={e.name} muscle={e.primary_muscle} exerciseId={e.id} className="size-14 shrink-0" rounded="rounded-xl" />
       <div className="min-w-0 flex-1">
         <div className="font-semibold text-[15px] truncate flex items-center gap-1.5">
           {e.name}

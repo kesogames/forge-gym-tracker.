@@ -166,3 +166,7 @@ input[type="number"] {
 .recharts-wrapper,
 .recharts-surface { outline: none; }
 .recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 11px; }
+
+/* Uniforme beeldbehandeling voor oefeningfoto's uit verschillende bronnen */
+.exercise-photo { filter: saturate(0.88) contrast(1.06) brightness(0.98); }
+[data-theme="dark"] .exercise-photo { filter: saturate(0.85) contrast(1.05) brightness(0.92); }

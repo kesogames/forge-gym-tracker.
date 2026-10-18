@@ -1,7 +1,7 @@
 "use client";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Check, Copy, History, Link2, MoreVertical, NotebookPen, Plus, Repeat, Timer, Trash2, Trophy } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, PlayCircle, Copy, History, Link2, MoreVertical, NotebookPen, Plus, Repeat, Timer, Trash2, Trophy } from "lucide-react";
 import { db } from "@/lib/db/db";
 import {
   addSet,
@@ -24,6 +24,7 @@ import type { Metric, WorkoutExercise, WorkoutSession, WorkoutSet } from "@/lib/
 import { Button, Confirm, cx, Field, IconButton, inputCls, NumField, Pill, Sheet, Stepper } from "../ui";
 import { ExerciseImage } from "../ExerciseImage";
 import { ExerciseRow } from "../ExercisePicker";
+import { ExerciseDemoSheet } from "../ExerciseDemo";
 import { toast, errorMessage } from "../toast";
 import { celebrate } from "../Celebrate";
 import { unlockAudio } from "./RestTimer";
@@ -63,6 +64,8 @@ export function ExerciseCard({ we, sets, session, index, count }: { we: WorkoutE
   const [setSheet, setSetSheet] = useState<WorkoutSet | null>(null);
   const [restOpen, setRestOpen] = useState(false);
   const [prSets, setPrSets] = useState<Record<string, string[]>>({});
+  const [demo, setDemo] = useState(false);
+  const exMap = useExerciseMap();
 
   const prev = useLiveQuery(() => getPreviousPerformance(we.exercise_id, session.started_at, session.id), [we.exercise_id, session.started_at, session.id]);
   const exNote = useLiveQuery(() => db().exercise_notes.get(we.exercise_id), [we.exercise_id]);
@@ -118,7 +121,9 @@ export function ExerciseCard({ we, sets, session, index, count }: { we: WorkoutE
         </div>
       )}
       <header className="flex items-center gap-3 p-3 pb-2">
-        <ExerciseImage image={we.exercise_image} name={we.exercise_name} muscle={we.primary_muscle} className="size-14 rounded-2xl" animate />
+        <button type="button" onClick={() => setDemo(true)} aria-label={`Uitleg ${we.exercise_name}`} className="shrink-0 active:scale-95 transition">
+          <ExerciseImage image={we.exercise_image} name={we.exercise_name} muscle={we.primary_muscle} exerciseId={we.exercise_id} className="size-14" rounded="rounded-2xl" badge />
+        </button>
         <div className="min-w-0 flex-1">
           <h3 className="font-bold text-[17px] leading-tight tracking-tight">{we.exercise_name}</h3>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[13px] text-muted">
@@ -208,6 +213,7 @@ export function ExerciseCard({ we, sets, session, index, count }: { we: WorkoutE
       {/* Menu */}
       <Sheet open={menu} onOpenChange={setMenu} title={we.exercise_name}>
         <div className="grid gap-1.5">
+          <MenuItem icon={PlayCircle} label="Uitleg en animatie" onClick={() => { setMenu(false); setDemo(true); }} />
           <MenuItem icon={NotebookPen} label="Notities" onClick={() => { setMenu(false); setNotesOpen(true); }} />
           <MenuItem icon={Repeat} label="Vervangen door alternatief" onClick={() => { setMenu(false); setAltOpen(true); }} />
           <MenuItem icon={Timer} label={`Rusttijd (${we.rest_seconds}s)`} onClick={() => { setMenu(false); setRestOpen(true); }} />
@@ -217,6 +223,7 @@ export function ExerciseCard({ we, sets, session, index, count }: { we: WorkoutE
         </div>
       </Sheet>
 
+      <ExerciseDemoSheet e={exMap.get(we.exercise_id)} open={demo} onOpenChange={setDemo} />
       <NotesSheet open={notesOpen} onOpenChange={setNotesOpen} we={we} exerciseNote={exNote?.text ?? ""} />
       <AlternativesSheet open={altOpen} onOpenChange={setAltOpen} we={we} />
       <Sheet open={restOpen} onOpenChange={setRestOpen} title="Rusttijd" description="Na elke voltooide set start de rusttimer automatisch.">

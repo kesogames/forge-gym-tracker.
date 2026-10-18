@@ -57,6 +57,8 @@ const PATTERN_MECHANIC: Record<string, Mechanic> = {
   complex: "compound",
   crawl: "compound",
   conditioning: "compound",
+  mobility: "isolation",
+  stretch: "isolation",
 };
 
 type Opts = { unilateral?: boolean; metrics?: Exercise["metrics"] };
@@ -394,6 +396,48 @@ export const EXERCISES: Exercise[] = [
   e("plank-shoulder-tap", "Plank met shoulder taps", null, "abs", ["shoulders"], "bodyweight", "bodyweight_reps", "plank", 45, "In hoge plank tik je afwisselend je schouder aan zonder je heupen te laten draaien."),
   e("side-plank-rotation", "Side plank met rotatie", "Side_Bridge", "abs", ["shoulders"], "bodyweight", "bodyweight_reps", "rotation", 45, "In zijwaartse plank draai je je bovenste arm onder je lichaam door en weer open. Per kant.", U),
   e("ab-rollout-barbell", "Barbell rollout", "Ab_Roller", "abs", ["shoulders", "lower_back"], "barbell", "bodyweight_reps", "plank", 60, "Geknield met handen op een stang met schijven. Rol naar voren en terug met een stabiele romp."),
+
+  // ───────── Mobiliteit (dynamisch, herhalingen)
+  e("worlds-greatest-stretch", "World's greatest stretch", "Worlds_Greatest_Stretch", "glutes", ["hamstrings", "back", "adductors"], "bodyweight", "bodyweight_reps", "mobility", 15, "Grote lunge, hand naast je voorste voet. Breng je elleboog naar je enkel, draai daarna je arm open naar het plafond. Per kant.", U),
+  e("cat-cow", "Cat-cow", "Cat_Stretch", "lower_back", ["back", "abs"], "bodyweight", "bodyweight_reps", "mobility", 15, "Op handen en knieën. Maak je rug bol en kijk naar je navel, dan hol met je borst naar voren. Rustig ademen."),
+  e("thoracic-rotation", "Thoracale rotatie (open book)", "Torso_Rotation", "back", ["shoulders"], "bodyweight", "bodyweight_reps", "mobility", 15, "Lig op je zij met knieën gebogen, armen gestrekt voor je. Draai je bovenste arm in een boog naar de andere kant en volg met je blik. Per kant.", U),
+  e("thread-the-needle", "Thread the needle", "Middle_Back_Stretch", "back", ["shoulders"], "bodyweight", "bodyweight_reps", "mobility", 15, "Op handen en knieën. Schuif één arm onder je lichaam door tot je schouder de grond raakt en draai daarna open naar het plafond. Per kant.", U),
+  e("hip-90-90", "90/90 heupwissel", "90_90_Hamstring", "glutes", ["adductors", "abductors"], "bodyweight", "bodyweight_reps", "mobility", 15, "Zittend met beide knieën in 90 graden. Draai je knieën van links naar rechts zonder je handen te gebruiken. Rechtop blijven."),
+  e("hip-cars", "Heup-CARs", "Standing_Hip_Circles", "glutes", ["abductors", "adductors"], "bodyweight", "bodyweight_reps", "mobility", 15, "Op handen en knieën of staand. Maak met je knie de grootst mogelijke langzame cirkel vanuit je heup. Per kant en richting.", U),
+  e("shoulder-cars", "Schouder-CARs", "Arm_Circles", "shoulders", ["back"], "bodyweight", "bodyweight_reps", "mobility", 15, "Maak met een gestrekte arm de grootst mogelijke langzame cirkel. Romp blijft stil. Per kant en richting.", U),
+  e("band-dislocates", "Band dislocates", "Round_The_World_Shoulder_Stretch", "shoulders", ["back", "chest"], "band", "bodyweight_reps", "mobility", 15, "Houd een band of stok breed vast en breng hem met gestrekte armen over je hoofd naar achteren en terug. Hoe smaller, hoe zwaarder."),
+  e("wall-slides", "Wall slides", "Upward_Stretch", "shoulders", ["traps", "back"], "bodyweight", "bodyweight_reps", "mobility", 15, "Rug en armen tegen de muur, ellebogen 90 graden. Schuif je armen omhoog zonder dat ze loskomen van de muur."),
+  e("inchworm", "Inchworm", "Inchworm", "hamstrings", ["shoulders", "abs"], "bodyweight", "bodyweight_reps", "mobility", 15, "Buig voorover, loop met je handen naar een plank en loop met kleine stapjes terug naar je handen."),
+  e("deep-squat-hold", "Diepe squat-houding", "Sit_Squats", "quads", ["adductors", "glutes", "calves"], "bodyweight", "time", "mobility", 15, "Zak zo diep mogelijk in een squat met hielen aan de grond, ellebogen tegen je knieën. Houd vast en adem rustig."),
+  e("cossack-squat", "Cossack squat", null, "adductors", ["quads", "glutes"], "bodyweight", "bodyweight_reps", "mobility", 30, "Brede stand. Zak naar één kant terwijl het andere been gestrekt blijft met tenen omhoog. Wissel af."),
+  e("ankle-mobility", "Enkelmobiliteit tegen muur", "Ankle_Circles", "calves", [], "bodyweight", "bodyweight_reps", "mobility", 15, "Voet een handbreedte van de muur, duw je knie over je tenen naar de muur zonder dat je hiel loskomt. Per kant.", U),
+  e("leg-swings", "Leg swings", "Front_Leg_Raises", "hamstrings", ["adductors", "glutes"], "bodyweight", "bodyweight_reps", "mobility", 15, "Houd je vast en zwaai je been ontspannen voor- en achterwaarts of zijwaarts. Per been.", U),
+  e("jefferson-curl", "Jefferson curl", "Standing_Toe_Touches", "lower_back", ["hamstrings"], "dumbbell", "weight_reps", "mobility", 30, "Op een verhoging met een licht gewicht. Rol wervel voor wervel naar beneden en weer omhoog. Begin zonder of met heel weinig gewicht."),
+  e("scorpion", "Scorpion", "Upper_Back-Leg_Grab", "glutes", ["lower_back", "back"], "bodyweight", "bodyweight_reps", "mobility", 15, "Op je buik met armen gespreid. Breng één voet over je lichaam naar de andere hand. Per kant."),
+  e("neck-mobility", "Nekmobiliteit", "Side_Neck_Stretch", "traps", [], "bodyweight", "bodyweight_reps", "mobility", 15, "Draai, kantel en knik je hoofd langzaam in alle richtingen binnen een comfortabel bereik."),
+
+  // ───────── Stretchen & flexibiliteit (statisch, tijd)
+  e("couch-stretch", "Couch stretch", "Kneeling_Hip_Flexor", "quads", ["glutes"], "bodyweight", "time", "stretch", 15, "Knie tegen een muur of bank met je voet omhoog, andere voet voor je. Duw je heup naar voren en span je bil aan. Per kant.", U),
+  e("hip-flexor-stretch", "Heupbuigerstretch (geknield)", "Kneeling_Hip_Flexor", "quads", ["glutes"], "bodyweight", "time", "stretch", 15, "Halve knielstand. Kantel je bekken en schuif je heup naar voren tot je rek voelt aan de voorkant van je heup. Per kant.", U),
+  e("pigeon-stretch", "Pigeon stretch", "IT_Band_and_Glute_Stretch", "glutes", ["abductors"], "bodyweight", "time", "stretch", 15, "Voorste been gebogen voor je, achterste been gestrekt naar achteren. Zak met je romp naar voren. Per kant.", U),
+  e("figure-4-stretch", "Figure 4 stretch", "Lying_Glute", "glutes", [], "bodyweight", "time", "stretch", 15, "Op je rug, enkel over je andere knie. Trek het onderste been naar je borst. Per kant.", U),
+  e("hamstring-stretch", "Hamstringstretch", "Hamstring_Stretch", "hamstrings", ["calves"], "bodyweight", "time", "stretch", 15, "Op je rug met een band of handen achter je knie. Trek je gestrekte been omhoog tot je rek voelt. Per kant.", U),
+  e("seated-forward-fold", "Zittende vooroverbuiging", "Seated_Floor_Hamstring_Stretch", "hamstrings", ["lower_back", "calves"], "bodyweight", "time", "stretch", 15, "Zit met gestrekte benen en buig vanuit je heupen naar voren richting je tenen."),
+  e("frog-stretch", "Frog stretch", "Intermediate_Groin_Stretch", "adductors", [], "bodyweight", "time", "stretch", 15, "Op handen en knieën met je knieën zo breed mogelijk. Duw je heupen rustig naar achteren."),
+  e("butterfly-stretch", "Butterfly stretch", "Adductor_Groin", "adductors", [], "bodyweight", "time", "stretch", 15, "Zittend met je voetzolen tegen elkaar. Duw je knieën rustig naar de grond."),
+  e("straddle-stretch", "Straddle (spreidzit)", "The_Straddle", "adductors", ["hamstrings"], "bodyweight", "time", "stretch", 15, "Zit met je benen zo breed mogelijk en buig met een rechte rug naar voren."),
+  e("quad-stretch", "Quadricepsstretch (staand)", "Quad_Stretch", "quads", [], "bodyweight", "time", "stretch", 15, "Pak je enkel achter je vast en trek je hiel naar je bil. Knieën naast elkaar. Per kant.", U),
+  e("calf-stretch", "Kuitstretch tegen muur", "Calf_Stretch_Hands_Against_Wall", "calves", [], "bodyweight", "time", "stretch", 15, "Handen tegen de muur, achterste been gestrekt met hiel aan de grond. Leun naar voren. Per kant.", U),
+  e("childs-pose", "Child's pose", "Childs_Pose", "lower_back", ["back", "shoulders"], "bodyweight", "time", "stretch", 15, "Zit op je hielen, buig voorover en strek je armen voor je uit. Ontspan en adem diep."),
+  e("cobra-stretch", "Cobra", "One_Half_Locust", "abs", ["lower_back"], "bodyweight", "time", "stretch", 15, "Op je buik, druk je bovenlichaam omhoog met gestrekte armen. Heupen blijven op de grond."),
+  e("doorway-chest-stretch", "Borststretch in deuropening", "Chest_And_Front_Of_Shoulder_Stretch", "chest", ["shoulders"], "bodyweight", "time", "stretch", 15, "Onderarm tegen een deurpost, elleboog op schouderhoogte. Draai je romp weg tot je rek voelt in je borst. Per kant.", U),
+  e("lat-stretch", "Latstretch", "Overhead_Lat", "back", ["triceps"], "bodyweight", "time", "stretch", 15, "Pak een paal of rek vast en hang met je heupen naar achteren en opzij. Per kant.", U),
+  e("cross-body-shoulder", "Schouderstretch (arm over borst)", "Shoulder_Stretch", "shoulders", ["back"], "bodyweight", "time", "stretch", 15, "Trek je gestrekte arm over je borst met je andere hand. Per kant.", U),
+  e("triceps-stretch", "Tricepsstretch", "Triceps_Stretch", "triceps", ["back"], "bodyweight", "time", "stretch", 15, "Hand achter je hoofd tussen je schouderbladen, duw je elleboog zacht naar beneden. Per kant.", U),
+  e("wrist-stretch", "Pols- en onderarmstretch", "Kneeling_Forearm_Stretch", "forearms", [], "bodyweight", "time", "stretch", 15, "Op je knieën met handpalmen of handruggen op de grond, vingers naar je toe. Leun rustig naar achteren."),
+  e("side-bend-stretch", "Zijwaartse stretch", "Standing_Lateral_Stretch", "abs", ["back"], "bodyweight", "time", "stretch", 15, "Arm boven je hoofd en buig opzij tot je rek voelt in je flank. Per kant.", U),
+  e("spinal-twist", "Liggende rugdraai", "Spinal_Stretch", "lower_back", ["glutes"], "bodyweight", "time", "stretch", 15, "Op je rug, trek één knie over je lichaam naar de grond en kijk de andere kant op. Per kant.", U),
+  e("dead-hang-stretch", "Dead hang (ontspannen)", "One_Handed_Hang", "back", ["forearms", "shoulders"], "bodyweight", "time", "stretch", 15, "Hang ontspannen aan een stang om je schouders en rug te strekken."),
 ];
 
 // Uitgebreide bibliotheek uit free-exercise-db (Engelse naam en uitvoering), na de
@@ -403,7 +447,7 @@ EXERCISES.push(...DB_EXERCISES);
 
 export const EXERCISE_BY_ID: Map<string, Exercise> = new Map(EXERCISES.map((x) => [x.id, x]));
 
-export type ExerciseGroup = "kracht" | "plyo" | "explosief" | "rotatie" | "combinatie" | "landmine" | "cardio";
+export type ExerciseGroup = "kracht" | "plyo" | "explosief" | "rotatie" | "combinatie" | "landmine" | "cardio" | "mobiliteit" | "stretchen";
 
 export const GROUP_NAME: Record<ExerciseGroup, string> = {
   kracht: "Kracht",
@@ -413,7 +457,15 @@ export const GROUP_NAME: Record<ExerciseGroup, string> = {
   combinatie: "Combinatie & conditie",
   landmine: "Landmine",
   cardio: "Cardio",
+  mobiliteit: "Mobiliteit",
+  stretchen: "Stretchen & flexibiliteit",
 };
+
+/** Mobiliteit en stretchen tellen niet als werksets of spiervolume. */
+export function isMobilityExercise(exerciseId: string): boolean {
+  const ex = EXERCISE_BY_ID.get(exerciseId);
+  return !!ex && (ex.pattern === "mobility" || ex.pattern === "stretch");
+}
 
 export function exerciseGroup(e: Pick<Exercise, "id" | "name" | "pattern">): ExerciseGroup {
   if (/landmine/i.test(e.id) || /landmine/i.test(e.name)) return "landmine";
@@ -436,6 +488,10 @@ export function exerciseGroup(e: Pick<Exercise, "id" | "name" | "pattern">): Exe
       return "combinatie";
     case "cardio":
       return "cardio";
+    case "mobility":
+      return "mobiliteit";
+    case "stretch":
+      return "stretchen";
     default:
       return "kracht";
   }
