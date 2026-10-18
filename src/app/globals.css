@@ -1,26 +1,168 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f3f4f0;
+  --surface: #ffffff;
+  --surface-2: #eceee8;
+  --surface-3: #e2e5dc;
+  --border: rgba(14, 17, 19, 0.08);
+  --border-strong: rgba(14, 17, 19, 0.16);
+  --text: #0e1113;
+  --text-2: #3d454c;
+  --muted: #687079;
+  --accent: #c8ff2e;
+  --accent-ink: #0b0d0f;
+  --accent-text: #4a7a00;
+  --accent-soft: rgba(140, 200, 0, 0.16);
+  --danger: #d93a3f;
+  --warn: #b26b00;
+  --info: #2f7bdb;
+  --chart-1: #5e9a00;
+  --chart-a: #5e9a00;
+  --chart-b: #2f7bdb;
+  --grid: rgba(14, 17, 19, 0.07);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0a0c0e;
+  --surface: #13161a;
+  --surface-2: #1a1e23;
+  --surface-3: #232830;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text: #f2f4f5;
+  --text-2: #c3c9ce;
+  --muted: #858e97;
+  --accent: #c8ff2e;
+  --accent-ink: #0b0d0f;
+  --accent-text: #c8ff2e;
+  --accent-soft: rgba(200, 255, 46, 0.12);
+  --danger: #ff5a5f;
+  --warn: #ffb020;
+  --info: #5aa9ff;
+  --chart-1: #c8ff2e;
+  --chart-a: #72a303;
+  --chart-b: #3f88f0;
+  --grid: rgba(255, 255, 255, 0.06);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-info: var(--info);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-inter), ui-sans-serif, sans-serif;
+  --shadow-card: var(--shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
+
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Verberg spinners bij number-inputs: we gebruiken eigen +/- knoppen */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes flash {
+  0% { background-color: var(--accent-soft); }
+  100% { background-color: transparent; }
+}
+.animate-flash { animation: flash 900ms ease-out; }
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.animate-shake { animation: shake 400ms; }
+
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -20px, 0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--dx), 110vh, 0) rotate(var(--rot)); opacity: 0.9; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.animate-pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+.recharts-wrapper,
+.recharts-surface { outline: none; }
+.recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 11px; }
